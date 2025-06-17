@@ -1,304 +1,469 @@
 /**
- * 🔥 TEST DE CONEXIÓN FIREBASE - ZONA 1561
- * Script completo con configuración específica
- * @version: 2.0.0
- * @project: zona1561-4de30
+ * 🏥 SISTEMA DE GESTIÓN DE FARMACIAS ZONA 1561
+ * Basado en Firebase que YA FUNCIONA
+ * @version: 3.0.0
  */
 
 // 🎯 Variables globales
 let firebaseReady = false;
-let testCollectionName = 'firebase_test_zona1561';
-let connectionAttempts = 0;
-const maxRetries = 3;
+let farmacias = [];
+let editingId = null;
+const COLLECTION_NAME = 'farmacias_zona1561';
 
-// 🚀 Inicialización cuando el DOM esté listo
+// 🚀 Inicialización
 document.addEventListener('DOMContentLoaded', () => {
-    log('🚀 Iniciando aplicación de prueba Firebase...', 'info');
-    updateConnectionStatus('connecting', 'Conectando...', 'Inicializando Firebase Zona 1561...');
+    log('🚀 Iniciando Sistema de Farmacias...', 'info');
+    updateConnectionStatus('connecting', 'Conectando...', 'Inicializando sistema...');
     
-    // Verificar si Firebase está disponible
-    checkFirebaseAvailability();
+    setupEventListeners();
+    
+    // Escuchar Firebase
+    window.addEventListener('firebaseReady', handleFirebaseReady);
+    window.addEventListener('firebaseError', handleFirebaseError);
+    
+    // Timeout de seguridad
+    setTimeout(checkConnectionTimeout, 10000);
 });
 
-// 🔍 Verificar disponibilidad de Firebase
-function checkFirebaseAvailability() {
-    const checkInterval = setInterval(() => {
-        connectionAttempts++;
-        
-        if (window.firebaseApp && window.firebaseDB) {
-            clearInterval(checkInterval);
-            firebaseReady = true;
-            log('🔥 Firebase detectado y disponible', 'success');
-            testFirebaseConnection();
-        } else if (connectionAttempts >= maxRetries) {
-            clearInterval(checkInterval);
-            updateConnectionStatus('error', '❌ Firebase No Disponible', 'No se pudo inicializar Firebase después de varios intentos');
-            log(`❌ Firebase no disponible después de ${maxRetries} intentos`, 'error');
-        } else {
-            log(`⏳ Esperando Firebase... (intento ${connectionAttempts}/${maxRetries})`, 'warning');
-        }
-    }, 1000);
+// ✅ Firebase listo
+function handleFirebaseReady() {
+    firebaseReady = true;
+    log('✅ Firebase conectado - Sistema listo', 'success');
+    updateConnectionStatus('connected', '✅ Sistema Operativo', 'Conectado a Firebase zona1561-4de30');
+    
+    // Cargar farmacias existentes
+    loadFarmacias();
 }
 
-// 🧪 Probar conexión a Firebase
-async function testFirebaseConnection() {
-    try {
-        log('🧪 Probando conexión con base de datos...', 'info');
-        
-        // Test de escritura mínima
-        const testDoc = {
-            test: 'conexion_inicial',
-            timestamp: new Date().toISOString(),
-            proyecto: 'zona1561-test'
-        };
-        
-        const testCollection = window.firebaseCollection(window.firebaseDB, testCollectionName);
-        await window.firebaseAddDoc(testCollection, testDoc);
-        
-        // Test de lectura
-        const querySnapshot = await window.firebaseGetDocs(testCollection);
-        
-        updateConnectionStatus('connected', '✅ Conectado Exitosamente', `Firebase funcionando. ${querySnapshot.size} documentos en la colección de prueba`);
-        log(`✅ Conexión exitosa a zona1561-4de30. Documentos encontrados: ${querySnapshot.size}`, 'success');
-        log(`📊 Proyecto ID: zona1561-4de30`, 'info');
-        log(`🔗 Auth Domain: zona1561-4de30.firebaseapp.com`, 'info');
-        
-        // Cargar datos existentes
-        setTimeout(readTest, 1000);
-        
-    } catch (error) {
-        updateConnectionStatus('error', '❌ Error de Conexión', `Error: ${error.message}`);
-        log(`❌ Error de conexión: ${error.message}`, 'error');
-        
-        // Intentar diagnóstico
-        diagnoseConnectionError(error);
+// ❌ Error Firebase
+function handleFirebaseError(event) {
+    const error = event.detail;
+    log(`❌ Error Firebase: ${error.message}`, 'error');
+    updateConnectionStatus('error', '❌ Error Conexión', error.message);
+}
+
+// ⏰ Timeout de conexión
+function checkConnectionTimeout() {
+    if (!firebaseReady) {
+        log('⏰ Timeout - Trabajando en modo offline', 'warning');
+        updateConnectionStatus('error', '⏰ Modo Offline', 'Usando datos locales');
+        loadLocalFarmacias();
     }
 }
 
-// 🔧 Diagnosticar errores de conexión
-function diagnoseConnectionError(error) {
-    log('🔧 Ejecutando diagnóstico de conexión...', 'info');
-    
-    if (error.code === 'permission-denied') {
-        log('🔒 Error de permisos: Revisar reglas de Firestore', 'warning');
-        log('💡 Sugerencia: Verificar que las reglas permitan lectura/escritura', 'info');
-    } else if (error.code === 'unavailable') {
-        log('🌐 Error de red: Verificar conexión a internet', 'warning');
-    } else if (error.message.includes('quota')) {
-        log('📊 Error de cuota: Límite de Firebase alcanzado', 'warning');
-    } else {
-        log(`🔍 Error desconocido: ${error.code || 'No code'} - ${error.message}`, 'error');
+// 🎯 Configurar event listeners
+function setupEventListeners() {
+    // Búsqueda en tiempo real
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(filterFarmacias, 300));
     }
     
-    // Estado de variables globales de Firebase
-    log(`🔗 Firebase App: ${!!window.firebaseApp}`, 'info');
-    log(`🗄️ Firebase DB: ${!!window.firebaseDB}`, 'info');
-    log(`📚 Firebase Collection: ${!!window.firebaseCollection}`, 'info');
+    // Filtros
+    const filterTelefono = document.getElementById('filterTelefono');
+    if (filterTelefono) {
+        filterTelefono.addEventListener('change', filterFarmacias);
+    }
+    
+    // Formulario
+    const form = document.getElementById('farmaciaForm');
+    if (form) {
+        form.addEventListener('submit', handleFormSubmit);
+    }
+    
+    // Modal - cerrar al hacer clic fuera
+    const modal = document.getElementById('farmaciaModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+    }
+    
+    // Teclas globales
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+    });
 }
 
-// 📝 Escribir datos de prueba
-async function writeTest() {
+// 📊 Cargar farmacias desde Firebase
+async function loadFarmacias() {
     if (!firebaseReady) {
-        log('⚠️ Firebase no está listo. Espera un momento...', 'warning');
+        log('⚠️ Firebase no está listo', 'warning');
         return;
     }
-
-    const testData = document.getElementById('testData').value.trim();
-    if (!testData) {
-        log('⚠️ Por favor escribe algo para probar', 'warning');
-        alert('Escribe un mensaje para probar la escritura en Firebase');
-        return;
-    }
-
-    const writeButton = document.querySelector('button[onclick="writeTest()"]');
-    showLoading(writeButton);
 
     try {
-        log(`📝 Escribiendo en Firebase: "${testData}"...`, 'info');
+        log('📊 Cargando farmacias desde Firebase...', 'info');
         
-        const docData = {
-            mensaje: testData,
-            timestamp: new Date().toISOString(),
-            tipo: 'mensaje_usuario',
-            proyecto: 'zona1561-test',
-            ip: await getUserIP() || 'desconocida',
-            navegador: navigator.userAgent.split(' ')[0] || 'desconocido'
-        };
+        const farmaciaCollection = window.firebaseCollection(window.firebaseDB, COLLECTION_NAME);
+        const q = window.firebaseQuery(farmaciaCollection, window.firebaseOrderBy('nombre'));
+        const snapshot = await window.firebaseGetDocs(q);
         
-        const testCollection = window.firebaseCollection(window.firebaseDB, testCollectionName);
-        const docRef = await window.firebaseAddDoc(testCollection, docData);
-        
-        log(`✅ Documento creado exitosamente`, 'success');
-        log(`🆔 ID del documento: ${docRef.id}`, 'info');
-        log(`📊 Datos guardados: ${JSON.stringify(docData, null, 2)}`, 'info');
-        
-        document.getElementById('testData').value = '';
-        document.getElementById('testData').placeholder = 'Mensaje guardado correctamente!';
-        
-        // Leer automáticamente después de escribir
-        setTimeout(() => {
-            readTest();
-            document.getElementById('testData').placeholder = 'Escribe algo para probar...';
-        }, 500);
-        
-    } catch (error) {
-        log(`❌ Error escribiendo datos: ${error.message}`, 'error');
-        log(`🔍 Código de error: ${error.code || 'Sin código'}`, 'error');
-        alert(`Error al guardar: ${error.message}`);
-    } finally {
-        hideLoading(writeButton);
-    }
-}
-
-// 📖 Leer datos de Firebase
-async function readTest() {
-    if (!firebaseReady) {
-        log('⚠️ Firebase no está listo para leer datos', 'warning');
-        return;
-    }
-
-    const readButton = document.querySelector('button[onclick="readTest()"]');
-    showLoading(readButton);
-
-    try {
-        log('📖 Leyendo datos de Firebase...', 'info');
-        
-        const testCollection = window.firebaseCollection(window.firebaseDB, testCollectionName);
-        const querySnapshot = await window.firebaseGetDocs(testCollection);
-        
-        const dataDisplay = document.getElementById('dataDisplay');
-        dataDisplay.innerHTML = '';
-        
-        if (querySnapshot.empty) {
-            dataDisplay.innerHTML = `
-                <div style="text-align: center; padding: 20px; color: #666;">
-                    <i class="fas fa-database" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
-                    <p>No hay datos para mostrar</p>
-                    <small>Escribe algo arriba y haz clic en "Escribir" para crear tu primer registro</small>
-                </div>
-            `;
-            log('📖 No se encontraron datos en la colección', 'info');
-        } else {
-            let documentCount = 0;
-            querySnapshot.forEach((doc) => {
-                documentCount++;
-                const data = doc.data();
-                const dataItem = document.createElement('div');
-                dataItem.className = 'data-item';
-                
-                // Formatear fecha
-                const fecha = data.timestamp ? new Date(data.timestamp).toLocaleString('es-CO') : 'Sin fecha';
-                
-                dataItem.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                        <strong style="color: #1a73e8;">📄 Documento #${documentCount}</strong>
-                        <span style="font-size: 0.8rem; color: #666;">${fecha}</span>
-                    </div>
-                    <div style="margin-bottom: 8px;">
-                        <strong>🆔 ID:</strong> <code style="background: #f1f3f4; padding: 2px 4px; border-radius: 3px;">${doc.id}</code>
-                    </div>
-                    <div style="margin-bottom: 8px;">
-                        <strong>💬 Mensaje:</strong> "${data.mensaje || 'Sin mensaje'}"
-                    </div>
-                    <div style="margin-bottom: 8px;">
-                        <strong>🏷️ Tipo:</strong> ${data.tipo || 'Sin tipo'}
-                    </div>
-                    ${data.proyecto ? `<div style="margin-bottom: 8px;"><strong>📁 Proyecto:</strong> ${data.proyecto}</div>` : ''}
-                    ${data.ip ? `<div style="font-size: 0.8rem; color: #666;"><strong>🌐 IP:</strong> ${data.ip}</div>` : ''}
-                `;
-                dataDisplay.appendChild(dataItem);
+        farmacias = [];
+        snapshot.forEach((doc) => {
+            farmacias.push({
+                id: doc.id,
+                ...doc.data()
             });
-            
-            log(`✅ ${querySnapshot.size} documentos leídos correctamente`, 'success');
-            log(`📊 Colección: ${testCollectionName}`, 'info');
-        }
-        
-    } catch (error) {
-        log(`❌ Error leyendo datos: ${error.message}`, 'error');
-        dataDisplay.innerHTML = `
-            <div style="color: #ea4335; padding: 15px; border: 1px solid #ea4335; border-radius: 4px; background: #fef7f7;">
-                <strong>❌ Error al leer datos</strong><br>
-                ${error.message}
-            </div>
-        `;
-    } finally {
-        hideLoading(readButton);
-    }
-}
-
-// 🗑️ Eliminar todos los datos de prueba
-async function deleteTest() {
-    if (!firebaseReady) {
-        log('⚠️ Firebase no está listo para eliminar datos', 'warning');
-        return;
-    }
-
-    const confirmMessage = `¿Estás seguro de que quieres eliminar TODOS los datos de prueba?
-
-Esta acción:
-- Eliminará todos los documentos de la colección ${testCollectionName}
-- No se puede deshacer
-- Es solo para datos de prueba
-
-¿Continuar?`;
-
-    if (!confirm(confirmMessage)) {
-        log('🚫 Eliminación cancelada por el usuario', 'info');
-        return;
-    }
-
-    const deleteButton = document.querySelector('button[onclick="deleteTest()"]');
-    showLoading(deleteButton);
-
-    try {
-        log('🗑️ Iniciando eliminación de datos de prueba...', 'info');
-        
-        const testCollection = window.firebaseCollection(window.firebaseDB, testCollectionName);
-        const querySnapshot = await window.firebaseGetDocs(testCollection);
-        
-        if (querySnapshot.empty) {
-            log('ℹ️ No hay datos para eliminar', 'info');
-            return;
-        }
-        
-        const deletePromises = [];
-        const docIds = [];
-        
-        querySnapshot.forEach((document) => {
-            docIds.push(document.id);
-            deletePromises.push(
-                window.firebaseDeleteDoc(
-                    window.firebaseDoc(window.firebaseDB, testCollectionName, document.id)
-                )
-            );
         });
         
-        log(`🔄 Eliminando ${deletePromises.length} documentos...`, 'info');
-        await Promise.all(deletePromises);
-        
-        log(`✅ ${deletePromises.length} documentos eliminados exitosamente`, 'success');
-        log(`🗑️ IDs eliminados: ${docIds.join(', ')}`, 'info');
-        
-        // Actualizar la visualización
-        setTimeout(readTest, 500);
+        log(`✅ ${farmacias.length} farmacias cargadas`, 'success');
+        renderFarmacias();
+        updateStats();
         
     } catch (error) {
-        log(`❌ Error eliminando datos: ${error.message}`, 'error');
-        alert(`Error al eliminar: ${error.message}`);
-    } finally {
-        hideLoading(deleteButton);
+        log(`❌ Error cargando farmacias: ${error.message}`, 'error');
+        loadLocalFarmacias();
     }
 }
 
-// 🌐 Obtener IP del usuario (opcional)
-async function getUserIP() {
-    try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        return data.ip;
-    } catch (error) {
-        return null;
+// 💾 Cargar farmacias locales (fallback)
+function loadLocalFarmacias() {
+    const localData = localStorage.getItem('farmacias_zona1561_local');
+    if (localData) {
+        try {
+            farmacias = JSON.parse(localData);
+            log(`📱 ${farmacias.length} farmacias cargadas desde localStorage`, 'info');
+        } catch (error) {
+            farmacias = [];
+        }
+    } else {
+        farmacias = [];
     }
+    
+    renderFarmacias();
+    updateStats();
+}
+
+// 💾 Guardar en localStorage
+function saveToLocalStorage() {
+    try {
+        localStorage.setItem('farmacias_zona1561_local', JSON.stringify(farmacias));
+    } catch (error) {
+        log('❌ Error guardando en localStorage', 'error');
+    }
+}
+
+// 🎨 Renderizar tabla de farmacias
+function renderFarmacias(farmaciasList = farmacias) {
+    const tableBody = document.getElementById('farmaciaTableBody');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    if (farmaciasList.length === 0) {
+        document.querySelector('.table-container').style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+    }
+    
+    document.querySelector('.table-container').style.display = 'block';
+    emptyState.style.display = 'none';
+    
+    farmaciasList.forEach((farmacia, index) => {
+        const row = createFarmaciaRow(farmacia, index);
+        tableBody.appendChild(row);
+    });
+    
+    // Animación de entrada
+    animateTableRows();
+}
+
+// 🏗️ Crear fila de farmacia
+function createFarmaciaRow(farmacia, index) {
+    const row = document.createElement('tr');
+    row.className = 'farmacia-row';
+    
+    const telefonoDisplay = farmacia.telefono ? 
+        `<div class="telefono-container">
+            <a href="tel:${farmacia.telefono}" class="btn-phone">
+                <i class="fas fa-phone"></i> ${farmacia.telefono}
+            </a>
+            <a href="https://wa.me/57${farmacia.telefono}" target="_blank" class="btn-whatsapp" title="WhatsApp">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+        </div>` : 
+        '<span class="no-phone">Sin teléfono</span>';
+    
+    row.innerHTML = `
+        <td>
+            <div class="farmacia-name">
+                <i class="fas fa-store"></i>
+                <strong>${highlightSearch(farmacia.nombre)}</strong>
+            </div>
+        </td>
+        <td>
+            ${telefonoDisplay}
+        </td>
+        <td>
+            <div class="descripcion-container">
+                ${highlightSearch(farmacia.descripcion || 'Sin descripción')}
+            </div>
+        </td>
+        <td>
+            <div class="action-buttons">
+                <button onclick="editFarmacia('${farmacia.id}')" class="btn btn-edit" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deleteFarmacia('${farmacia.id}', '${farmacia.nombre.replace(/'/g, "\\'")}')" class="btn btn-delete" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </td>
+    `;
+    
+    return row;
+}
+
+// 🔍 Resaltar términos de búsqueda
+function highlightSearch(text) {
+    const searchTerm = document.getElementById('searchInput').value.trim();
+    if (!searchTerm || !text) return text || '';
+    
+    const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+}
+
+// 🛡️ Escapar regex
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// 🔍 Filtrar farmacias
+function filterFarmacias() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    const phoneFilter = document.getElementById('filterTelefono').value;
+    
+    let filtered = farmacias.filter(farmacia => {
+        // Filtro de búsqueda
+        const matchSearch = !searchTerm || 
+            farmacia.nombre.toLowerCase().includes(searchTerm) ||
+            (farmacia.telefono && farmacia.telefono.toLowerCase().includes(searchTerm)) ||
+            (farmacia.descripcion && farmacia.descripcion.toLowerCase().includes(searchTerm));
+        
+        // Filtro de teléfono
+        const matchPhone = !phoneFilter ||
+            (phoneFilter === 'con' && farmacia.telefono) ||
+            (phoneFilter === 'sin' && !farmacia.telefono);
+        
+        return matchSearch && matchPhone;
+    });
+    
+    renderFarmacias(filtered);
+    log(`🔍 Filtros aplicados: ${filtered.length}/${farmacias.length} farmacias`, 'info');
+}
+
+// ➕ Mostrar modal para agregar
+function showAddModal() {
+    document.getElementById('modalTitle').textContent = 'Agregar Nueva Farmacia';
+    document.getElementById('farmaciaForm').reset();
+    editingId = null;
+    document.getElementById('farmaciaModal').style.display = 'block';
+    document.getElementById('farmaciaNombre').focus();
+    log('➕ Modal de agregar farmacia abierto', 'info');
+}
+
+// ✏️ Editar farmacia
+function editFarmacia(id) {
+    const farmacia = farmacias.find(f => f.id === id);
+    if (!farmacia) {
+        log(`❌ Farmacia con ID ${id} no encontrada`, 'error');
+        return;
+    }
+    
+    document.getElementById('modalTitle').textContent = 'Editar Farmacia';
+    document.getElementById('farmaciaNombre').value = farmacia.nombre || '';
+    document.getElementById('farmaciaTelefono').value = farmacia.telefono || '';
+    document.getElementById('farmaciaDescripcion').value = farmacia.descripcion || '';
+    
+    editingId = id;
+    document.getElementById('farmaciaModal').style.display = 'block';
+    document.getElementById('farmaciaNombre').focus();
+    
+    log(`✏️ Editando farmacia: ${farmacia.nombre}`, 'info');
+}
+
+// ❌ Cerrar modal
+function closeModal() {
+    document.getElementById('farmaciaModal').style.display = 'none';
+    editingId = null;
+    log('❌ Modal cerrado', 'info');
+}
+
+// 📝 Manejar envío del formulario
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    const nombre = document.getElementById('farmaciaNombre').value.trim();
+    const telefono = document.getElementById('farmaciaTelefono').value.trim();
+    const descripcion = document.getElementById('farmaciaDescripcion').value.trim();
+    
+    if (!nombre) {
+        alert('El nombre de la farmacia es obligatorio');
+        return;
+    }
+    
+    const farmaciaData = {
+        nombre,
+        telefono,
+        descripcion,
+        fechaActualizacion: new Date().toISOString()
+    };
+    
+    try {
+        if (editingId) {
+            await updateFarmacia(editingId, farmaciaData);
+        } else {
+            farmaciaData.fechaCreacion = new Date().toISOString();
+            await addFarmacia(farmaciaData);
+        }
+        
+        closeModal();
+        
+    } catch (error) {
+        log(`❌ Error guardando farmacia: ${error.message}`, 'error');
+        alert(`Error: ${error.message}`);
+    }
+}
+
+// ➕ Agregar farmacia
+async function addFarmacia(farmaciaData) {
+    if (firebaseReady) {
+        try {
+            const collection = window.firebaseCollection(window.firebaseDB, COLLECTION_NAME);
+            const docRef = await window.firebaseAddDoc(collection, farmaciaData);
+            
+            farmaciaData.id = docRef.id;
+            farmacias.push(farmaciaData);
+            
+            log(`✅ Farmacia "${farmaciaData.nombre}" agregada a Firebase`, 'success');
+            
+        } catch (error) {
+            // Fallback local
+            farmaciaData.id = 'local_' + Date.now();
+            farmacias.push(farmaciaData);
+            log(`📱 Farmacia guardada localmente: ${error.message}`, 'warning');
+        }
+    } else {
+        // Solo local
+        farmaciaData.id = 'local_' + Date.now();
+        farmacias.push(farmaciaData);
+        log(`📱 Farmacia guardada localmente (sin Firebase)`, 'warning');
+    }
+    
+    saveToLocalStorage();
+    renderFarmacias();
+    updateStats();
+}
+
+// ✏️ Actualizar farmacia
+async function updateFarmacia(id, farmaciaData) {
+    const index = farmacias.findIndex(f => f.id === id);
+    if (index === -1) return;
+    
+    if (firebaseReady && !id.startsWith('local_')) {
+        try {
+            const docRef = window.firebaseDoc(window.firebaseDB, COLLECTION_NAME, id);
+            await window.firebaseUpdateDoc(docRef, farmaciaData);
+            
+            log(`✅ Farmacia actualizada en Firebase`, 'success');
+            
+        } catch (error) {
+            log(`📱 Error Firebase, actualizando localmente: ${error.message}`, 'warning');
+        }
+    }
+    
+    farmacias[index] = { ...farmacias[index], ...farmaciaData };
+    saveToLocalStorage();
+    renderFarmacias();
+    updateStats();
+}
+
+// 🗑️ Eliminar farmacia
+async function deleteFarmacia(id, nombre) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar "${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    const index = farmacias.findIndex(f => f.id === id);
+    if (index === -1) return;
+    
+    if (firebaseReady && !id.startsWith('local_')) {
+        try {
+            const docRef = window.firebaseDoc(window.firebaseDB, COLLECTION_NAME, id);
+            await window.firebaseDeleteDoc(docRef);
+            
+            log(`✅ Farmacia eliminada de Firebase`, 'success');
+            
+        } catch (error) {
+            log(`📱 Error Firebase, eliminando localmente: ${error.message}`, 'warning');
+        }
+    }
+    
+    farmacias.splice(index, 1);
+    saveToLocalStorage();
+    renderFarmacias();
+    updateStats();
+    
+    log(`🗑️ Farmacia "${nombre}" eliminada`, 'info');
+}
+
+// 📊 Actualizar estadísticas
+function updateStats() {
+    const total = farmacias.length;
+    const conTelefono = farmacias.filter(f => f.telefono).length;
+    const ahora = new Date().toLocaleTimeString('es-CO', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    
+    document.getElementById('totalFarmacias').textContent = total;
+    document.getElementById('conTelefono').textContent = conTelefono;
+    document.getElementById('ultimaActualizacion').textContent = ahora;
+}
+
+// 📤 Exportar datos a Excel
+function exportData() {
+    try {
+        const dataToExport = farmacias.map((farmacia, index) => ({
+            'N°': index + 1,
+            'NOMBRE': farmacia.nombre,
+            'TELEFONO': farmacia.telefono || '',
+            'DESCRIPCION': farmacia.descripcion || '',
+            'FECHA_CREACION': farmacia.fechaCreacion ? new Date(farmacia.fechaCreacion).toLocaleString('es-CO') : '',
+            'ULTIMA_ACTUALIZACION': farmacia.fechaActualizacion ? new Date(farmacia.fechaActualizacion).toLocaleString('es-CO') : ''
+        }));
+        
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Farmacias_Zona1561');
+        
+        const fecha = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(workbook, `Farmacias_Zona1561_${fecha}.xlsx`);
+        
+        log(`📊 Excel exportado: ${farmacias.length} farmacias`, 'success');
+        
+    } catch (error) {
+        log(`❌ Error exportando: ${error.message}`, 'error');
+        alert('Error al exportar datos');
+    }
+}
+
+// ✨ Animación de filas
+function animateTableRows() {
+    const rows = document.querySelectorAll('.farmacia-row');
+    rows.forEach((row, index) => {
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            row.style.transition = 'all 0.3s ease';
+            row.style.opacity = '1';
+            row.style.transform = 'translateY(0)';
+        }, index * 50);
+    });
 }
 
 // 📊 Actualizar estado de conexión
@@ -308,23 +473,20 @@ function updateConnectionStatus(status, title, message) {
     const statusTitle = document.getElementById('statusTitle');
     const statusMessage = document.getElementById('statusMessage');
     
-    // Limpiar clases anteriores
+    if (!statusCard) return;
+    
     statusCard.className = 'status-card';
-    statusIcon.className = '';
     
     switch (status) {
         case 'connecting':
             statusIcon.className = 'fas fa-spinner fa-spin';
-            statusCard.classList.add('pulse');
             break;
         case 'connected':
             statusCard.classList.add('connected');
-            statusCard.classList.remove('pulse');
             statusIcon.className = 'fas fa-check-circle success';
             break;
         case 'error':
             statusCard.classList.add('error');
-            statusCard.classList.remove('pulse');
             statusIcon.className = 'fas fa-exclamation-triangle error';
             break;
     }
@@ -333,15 +495,16 @@ function updateConnectionStatus(status, title, message) {
     statusMessage.textContent = message;
 }
 
-// 📝 Sistema de logging mejorado
+// 📝 Sistema de logging
 function log(message, type = 'info') {
     const logContainer = document.getElementById('logContainer');
+    if (!logContainer) return;
+    
     const timestamp = new Date().toLocaleTimeString('es-CO');
     
     const logEntry = document.createElement('div');
     logEntry.className = `log-entry ${type}`;
     
-    // Iconos para cada tipo de log
     const icons = {
         'info': 'ℹ️',
         'success': '✅',
@@ -349,96 +512,65 @@ function log(message, type = 'info') {
         'error': '❌'
     };
     
-    logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> ${icons[type]} ${message}`;
+    logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${icons[type]} ${message}`;
     
     logContainer.appendChild(logEntry);
     logContainer.scrollTop = logContainer.scrollHeight;
     
-    // También loggear en consola con colores
-    const consoleColors = {
-        'info': 'color: #2196F3',
-        'success': 'color: #4CAF50',
-        'warning': 'color: #FF9800',
-        'error': 'color: #F44336'
-    };
-    
-    console.log(`%c[Firebase Test Zona1561] ${message}`, consoleColors[type]);
+    // Console log
+    console.log(`[Farmacias] ${message}`);
 }
 
 // 🧹 Limpiar log
 function clearLog() {
     const logContainer = document.getElementById('logContainer');
-    logContainer.innerHTML = '';
-    log('🧹 Log de actividades limpiado', 'info');
+    if (logContainer) {
+        logContainer.innerHTML = '';
+        log('🧹 Registro limpiado', 'info');
+    }
 }
 
-// 🎯 Funciones globales para los botones
-window.writeTest = writeTest;
-window.readTest = readTest;
-window.deleteTest = deleteTest;
+// ⏱️ Debounce utility
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// 🎯 Funciones globales
+window.showAddModal = showAddModal;
+window.editFarmacia = editFarmacia;
+window.deleteFarmacia = deleteFarmacia;
+window.closeModal = closeModal;
+window.loadFarmacias = loadFarmacias;
+window.exportData = exportData;
 window.clearLog = clearLog;
 
-// 🔧 Funciones de utilidad para loading
-function showLoading(element) {
-    if (element) {
-        element.classList.add('loading');
-        element.disabled = true;
-        const originalText = element.innerHTML;
-        element.setAttribute('data-original-text', originalText);
-        element.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-    }
-}
-
-function hideLoading(element) {
-    if (element) {
-        element.classList.remove('loading');
-        element.disabled = false;
-        const originalText = element.getAttribute('data-original-text');
-        if (originalText) {
-            element.innerHTML = originalText;
+// 🔧 Debug utilities
+window.farmaciaDebug = {
+    status: () => ({
+        firebaseReady,
+        totalFarmacias: farmacias.length,
+        editingId,
+        lastUpdate: new Date().toISOString()
+    }),
+    getFarmacias: () => farmacias,
+    clearAll: () => {
+        if (confirm('¿Eliminar TODAS las farmacias? Esta acción no se puede deshacer.')) {
+            farmacias = [];
+            localStorage.removeItem('farmacias_zona1561_local');
+            renderFarmacias();
+            updateStats();
+            log('🧹 Todas las farmacias eliminadas', 'warning');
         }
-    }
-}
-
-// 📱 Detectar errores no manejados
-window.addEventListener('error', (event) => {
-    log(`❌ Error JavaScript no manejado: ${event.error.message}`, 'error');
-    console.error('Error details:', event.error);
-});
-
-// 🔄 Detectar cambios de visibilidad
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && firebaseReady) {
-        log('👁️ Página visible, verificando estado de conexión...', 'info');
-        setTimeout(testFirebaseConnection, 1000);
-    }
-});
-
-// 🎯 Funciones de debug para la consola
-window.firebaseDebug = {
-    getStatus: () => {
-        return {
-            firebaseReady,
-            connectionAttempts,
-            hasApp: !!window.firebaseApp,
-            hasDB: !!window.firebaseDB,
-            collection: testCollectionName,
-            project: 'zona1561-4de30'
-        };
-    },
-    forceReconnect: () => {
-        log('🔄 Forzando reconexión...', 'info');
-        firebaseReady = false;
-        connectionAttempts = 0;
-        checkFirebaseAvailability();
-    },
-    testWrite: (message = 'Test desde consola') => {
-        document.getElementById('testData').value = message;
-        writeTest();
     }
 };
 
-// 🚀 Log inicial
-log('📱 Script de prueba Firebase cargado correctamente', 'success');
-log('🏢 Proyecto: zona1561-4de30', 'info');
-log('💡 Tip: Usa firebaseDebug.getStatus() en la consola para debug', 'info');
+// 🚀 Inicialización final
+log('📱 Sistema de Farmacias cargado correctamente', 'success');
