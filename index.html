@@ -3,66 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Firebase - Zona 1561</title>
+    <title>Gestión Farmacias Zona 1561</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container">
+        <!-- Header Corporativo -->
         <header class="header">
-            <h1><i class="fas fa-database"></i> Test Firebase Zona 1561</h1>
-            <p>Sistema de prueba y diagnóstico</p>
+            <h1><i class="fas fa-pills"></i> Gestión Farmacias Zona 1561</h1>
+            <p>Sistema corporativo de gestión y control</p>
         </header>
 
+        <!-- Estado de Conexión -->
         <div class="connection-status" id="connectionStatus">
             <div class="status-card">
                 <i class="fas fa-spinner fa-spin" id="statusIcon"></i>
                 <h3 id="statusTitle">Conectando...</h3>
-                <p id="statusMessage">Inicializando Firebase...</p>
+                <p id="statusMessage">Inicializando sistema...</p>
             </div>
         </div>
 
-        <div class="test-panel">
-            <h2><i class="fas fa-flask"></i> Panel de Pruebas</h2>
-            
-            <div class="test-section">
-                <h3>📝 Escribir Datos</h3>
-                <div class="input-group">
-                    <input type="text" id="testData" placeholder="Escribe algo para probar...">
-                    <button onclick="writeTest()" class="btn btn-primary">
-                        <i class="fas fa-upload"></i> Escribir
+        <!-- Estadísticas -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="fas fa-store"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="totalFarmacias">0</span>
+                    <span class="stat-label">Farmacias</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-phone"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="conTelefono">0</span>
+                    <span class="stat-label">Con Teléfono</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="ultimaActualizacion">--:--</span>
+                    <span class="stat-label">Última Actualización</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Gestión -->
+        <div class="management-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-cogs"></i> Panel de Gestión</h2>
+                <div class="panel-actions">
+                    <button onclick="showAddModal()" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Agregar Farmacia
+                    </button>
+                    <button onclick="exportData()" class="btn btn-success">
+                        <i class="fas fa-file-excel"></i> Exportar
+                    </button>
+                    <button onclick="loadFarmacias()" class="btn btn-info">
+                        <i class="fas fa-sync"></i> Actualizar
                     </button>
                 </div>
             </div>
 
-            <div class="test-section">
-                <h3>📖 Leer Datos</h3>
-                <button onclick="readTest()" class="btn btn-success">
-                    <i class="fas fa-download"></i> Leer Datos
-                </button>
-                <div id="dataDisplay" class="data-display">
-                    <p>Los datos aparecerán aquí...</p>
+            <!-- Búsqueda -->
+            <div class="search-section">
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre, teléfono o descripción...">
+                </div>
+                <div class="search-filters">
+                    <select id="filterTelefono">
+                        <option value="">Todos</option>
+                        <option value="con">Con Teléfono</option>
+                        <option value="sin">Sin Teléfono</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tabla de Farmacias -->
+            <div class="farmacia-list">
+                <div class="table-container">
+                    <table class="farmacia-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Teléfono</th>
+                                <th>Descripción</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="farmaciaTableBody">
+                            <!-- Las farmacias se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <i class="fas fa-store"></i>
+                    <h3>No hay farmacias registradas</h3>
+                    <p>Comienza agregando tu primera farmacia</p>
+                    <button onclick="showAddModal()" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Agregar Primera Farmacia
+                    </button>
                 </div>
             </div>
         </div>
 
-        <div class="activity-log">
-            <h3><i class="fas fa-list"></i> Log de Diagnóstico</h3>
+        <!-- Modal para Agregar/Editar -->
+        <div id="farmaciaModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Agregar Farmacia</h3>
+                    <span class="close" onclick="closeModal()">&times;</span>
+                </div>
+                <form id="farmaciaForm">
+                    <div class="form-group">
+                        <label for="farmacianombre">
+                            <i class="fas fa-store"></i> Nombre de la Farmacia *
+                        </label>
+                        <input type="text" id="farmaciaNombre" required 
+                               placeholder="Ej: Farmacia San Rafael">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="farmaciaTelefono">
+                            <i class="fas fa-phone"></i> Teléfono
+                        </label>
+                        <input type="tel" id="farmaciaTelefono" 
+                               placeholder="Ej: 3001234567">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="farmaciaDescripcion">
+                            <i class="fas fa-clipboard-list"></i> Descripción
+                        </label>
+                        <textarea id="farmaciaDescripcion" rows="4" 
+                                  placeholder="Información adicional, horarios, contactos, observaciones..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" onclick="closeModal()" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="activity-section">
+            <h3><i class="fas fa-list"></i> Registro de Actividades</h3>
             <div id="logContainer" class="log-container"></div>
-            <button onclick="clearLog()" class="btn btn-secondary">Limpiar Log</button>
+            <button onclick="clearLog()" class="btn btn-secondary">
+                <i class="fas fa-broom"></i> Limpiar Registro
+            </button>
         </div>
     </div>
 
-    <!-- Firebase - Configuración Robusta -->
+    <!-- Firebase - Tu Configuración que YA FUNCIONA -->
     <script type="module">
         try {
-            console.log('🚀 Iniciando carga de Firebase...');
+            console.log('🚀 Iniciando Firebase para Farmacias...');
             
-            // Import Firebase
             const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js");
-            const { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, connectFirestoreEmulator } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js");
+            const { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js");
 
-            // Tu configuración Firebase
+            // Tu configuración que YA FUNCIONA
             const firebaseConfig = {
                 apiKey: "AIzaSyAaVSb70OFIoX48T9GbLmTcdXOSvKv2pRk",
                 authDomain: "zona1561-4de30.firebaseapp.com",
@@ -72,13 +181,9 @@
                 appId: "1:451366030738:web:e638db51fbe24f6a48054b"
             };
 
-            console.log('📊 Configuración Firebase cargada');
-
-            // Inicializar Firebase
+            console.log('📊 Inicializando Firebase...');
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
-
-            console.log('✅ Firebase inicializado correctamente');
 
             // Hacer disponible globalmente
             window.firebaseApp = app;
@@ -86,22 +191,25 @@
             window.firebaseCollection = collection;
             window.firebaseAddDoc = addDoc;
             window.firebaseGetDocs = getDocs;
+            window.firebaseUpdateDoc = updateDoc;
             window.firebaseDeleteDoc = deleteDoc;
             window.firebaseDoc = doc;
+            window.firebaseQuery = query;
+            window.firebaseOrderBy = orderBy;
 
-            // Señalar que Firebase está listo
             window.firebaseReady = true;
             window.dispatchEvent(new CustomEvent('firebaseReady'));
 
-            console.log('🔥 Firebase zona1561-4de30 listo para usar');
+            console.log('🔥 Firebase para Farmacias listo');
 
         } catch (error) {
-            console.error('❌ Error inicializando Firebase:', error);
+            console.error('❌ Error Firebase:', error);
             window.firebaseError = error;
             window.dispatchEvent(new CustomEvent('firebaseError', { detail: error }));
         }
     </script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
