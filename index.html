@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Conexión Firebase - Zona 1561</title>
+    <title>Test Firebase - Zona 1561</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <header class="header">
-            <h1><i class="fas fa-database"></i> Test Conexión Firebase</h1>
-            <p>Prueba básica de integración con Firebase</p>
+            <h1><i class="fas fa-database"></i> Test Firebase Zona 1561</h1>
+            <p>Sistema de prueba y diagnóstico</p>
         </header>
 
-        <!-- Estado de Conexión -->
         <div class="connection-status" id="connectionStatus">
             <div class="status-card">
                 <i class="fas fa-spinner fa-spin" id="statusIcon"></i>
@@ -24,13 +22,11 @@
             </div>
         </div>
 
-        <!-- Panel de Pruebas -->
         <div class="test-panel">
             <h2><i class="fas fa-flask"></i> Panel de Pruebas</h2>
             
-            <!-- Sección: Escribir Datos -->
             <div class="test-section">
-                <h3>📝 Escribir Datos en Firebase</h3>
+                <h3>📝 Escribir Datos</h3>
                 <div class="input-group">
                     <input type="text" id="testData" placeholder="Escribe algo para probar...">
                     <button onclick="writeTest()" class="btn btn-primary">
@@ -39,9 +35,8 @@
                 </div>
             </div>
 
-            <!-- Sección: Leer Datos -->
             <div class="test-section">
-                <h3>📖 Leer Datos de Firebase</h3>
+                <h3>📖 Leer Datos</h3>
                 <button onclick="readTest()" class="btn btn-success">
                     <i class="fas fa-download"></i> Leer Datos
                 </button>
@@ -49,61 +44,62 @@
                     <p>Los datos aparecerán aquí...</p>
                 </div>
             </div>
-
-            <!-- Sección: Eliminar Datos -->
-            <div class="test-section">
-                <h3>🗑️ Eliminar Datos de Firebase</h3>
-                <button onclick="deleteTest()" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Eliminar Todo
-                </button>
-            </div>
         </div>
 
-        <!-- Log de Actividades -->
         <div class="activity-log">
-            <h3><i class="fas fa-list"></i> Log de Actividades</h3>
-            <div id="logContainer" class="log-container">
-                <!-- Los logs aparecerán aquí -->
-            </div>
-            <button onclick="clearLog()" class="btn btn-secondary">
-                <i class="fas fa-broom"></i> Limpiar Log
-            </button>
+            <h3><i class="fas fa-list"></i> Log de Diagnóstico</h3>
+            <div id="logContainer" class="log-container"></div>
+            <button onclick="clearLog()" class="btn btn-secondary">Limpiar Log</button>
         </div>
     </div>
 
-    <!-- Firebase Scripts -->
+    <!-- Firebase - Configuración Robusta -->
     <script type="module">
-        // 🔥 AQUÍ PEGARÁS TU CONFIGURACIÓN DE FIREBASE
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        try {
+            console.log('🚀 Iniciando carga de Firebase...');
+            
+            // Import Firebase
+            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js");
+            const { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, connectFirestoreEmulator } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js");
 
-        // ⚠️ REEMPLAZA CON TU CONFIGURACIÓN
-        const firebaseConfig = {
-            apiKey: "TU_API_KEY_AQUI",
-            authDomain: "tu-proyecto.firebaseapp.com",
-            projectId: "tu-proyecto-id",
-            storageBucket: "tu-proyecto.firebasestorage.app",
-            messagingSenderId: "123456789",
-            appId: "tu-app-id"
-        };
+            // Tu configuración Firebase
+            const firebaseConfig = {
+                apiKey: "AIzaSyAaVSb70OFIoX48T9GbLmTcdXOSvKv2pRk",
+                authDomain: "zona1561-4de30.firebaseapp.com",
+                projectId: "zona1561-4de30",
+                storageBucket: "zona1561-4de30.firebasestorage.app",
+                messagingSenderId: "451366030738",
+                appId: "1:451366030738:web:e638db51fbe24f6a48054b"
+            };
 
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+            console.log('📊 Configuración Firebase cargada');
 
-        // Hacer disponible globalmente
-        window.firebaseApp = app;
-        window.firebaseDB = db;
-        window.firebaseCollection = collection;
-        window.firebaseAddDoc = addDoc;
-        window.firebaseGetDocs = getDocs;
-        window.firebaseDeleteDoc = deleteDoc;
-        window.firebaseDoc = doc;
+            // Inicializar Firebase
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
 
-        console.log('🔥 Firebase inicializado');
-        
-        // Notificar que Firebase está listo
-        window.dispatchEvent(new Event('firebaseReady'));
+            console.log('✅ Firebase inicializado correctamente');
+
+            // Hacer disponible globalmente
+            window.firebaseApp = app;
+            window.firebaseDB = db;
+            window.firebaseCollection = collection;
+            window.firebaseAddDoc = addDoc;
+            window.firebaseGetDocs = getDocs;
+            window.firebaseDeleteDoc = deleteDoc;
+            window.firebaseDoc = doc;
+
+            // Señalar que Firebase está listo
+            window.firebaseReady = true;
+            window.dispatchEvent(new CustomEvent('firebaseReady'));
+
+            console.log('🔥 Firebase zona1561-4de30 listo para usar');
+
+        } catch (error) {
+            console.error('❌ Error inicializando Firebase:', error);
+            window.firebaseError = error;
+            window.dispatchEvent(new CustomEvent('firebaseError', { detail: error }));
+        }
     </script>
 
     <script src="script.js"></script>
