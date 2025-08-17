@@ -1,8 +1,8 @@
 /**
- * 🎮 SISTEMA FARMACIAS ZONA 1561 - ULTRA IMMERSIVE EXPERIENCE (CORREGIDO)
- * Experiencia de Usuario Hiper-Interactiva y Futurista - Tabla Alineada
- * @version: Immersive Pro 4.1 FIXED
- * @experience: Next-Level User Interaction - Table Fixed
+ * 🎮 SISTEMA FARMACIAS ZONA 1561 - ULTRA IMMERSIVE EXPERIENCE (COMPLETO CORREGIDO)
+ * Experiencia de Usuario Hiper-Interactiva y Futurista - Tabla Completamente Corregida
+ * @version: Immersive Pro 4.2 COMPLETE FIXED
+ * @experience: Next-Level User Interaction - All Fixed
  */
 
 /* 🎨 Variables Ultra Interactivas */
@@ -286,7 +286,7 @@ body::after {
     font-weight: 300;
     position: relative;
     z-index: 2;
-    color: var(--text-secondary);
+    color: #8892b0;
     animation: slideInGlow 0.8s ease-out 0.2s both;
 }
 
@@ -956,7 +956,7 @@ body::after {
         rgba(26, 31, 58, 1));
 }
 
-/* 📊 TABLA INMERSIVA CORREGIDA - CRÍTICO */
+/* 📊 TABLA INMERSIVA CORREGIDA COMPLETA - CRÍTICO */
 .farmacia-list {
     padding: var(--spacing-lg);
 }
@@ -976,7 +976,6 @@ body::after {
     overflow-x: auto;
     position: relative;
     box-shadow: var(--shadow-3d);
-    /* Scrollbar personalizado */
     scrollbar-width: thin;
     scrollbar-color: var(--accent-neon) rgba(10, 14, 39, 0.5);
 }
@@ -1016,22 +1015,24 @@ body::after {
     100% { transform: translateX(100%); }
 }
 
-/* Indicador de swipe CORREGIDO */
-.table-container::after {
-    content: '⚡ Desliza para hackear más datos ⚡';
-    position: absolute;
-    bottom: 8px;
-    right: 16px;
-    background: linear-gradient(45deg, var(--accent-neon), var(--accent-blue));
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-family: var(--font-cyber);
-    animation: dataGlow 2s ease-in-out infinite;
-    pointer-events: none;
+/* Indicador de swipe SOLO EN MÓVIL */
+@media (max-width: 767px) {
+    .table-container::after {
+        content: '⚡ Desliza para ver más datos ⚡';
+        position: absolute;
+        bottom: 8px;
+        right: 16px;
+        background: linear-gradient(45deg, var(--accent-neon), var(--accent-blue));
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-family: var(--font-cyber);
+        animation: dataGlow 2s ease-in-out infinite;
+        pointer-events: none;
+    }
 }
 
 @keyframes dataGlow {
@@ -1039,16 +1040,37 @@ body::after {
     50% { opacity: 1; }
 }
 
-@media (min-width: 768px) {
-    .table-container::after { display: none; }
-}
-
 /* TABLA PRINCIPAL - ESTRUCTURA CORREGIDA */
 .farmacia-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 600px; /* Ancho mínimo para scroll horizontal */
-    table-layout: auto; /* Permite que las columnas se ajusten */
+    min-width: 800px;
+    table-layout: fixed;
+}
+
+/* DEFINIR ANCHOS DE COLUMNAS ESPECÍFICOS */
+.farmacia-table th:nth-child(1),
+.farmacia-table td:nth-child(1) {
+    width: 25%;
+    min-width: 200px;
+}
+
+.farmacia-table th:nth-child(2),
+.farmacia-table td:nth-child(2) {
+    width: 20%;
+    min-width: 150px;
+}
+
+.farmacia-table th:nth-child(3),
+.farmacia-table td:nth-child(3) {
+    width: 35%;
+    min-width: 250px;
+}
+
+.farmacia-table th:nth-child(4),
+.farmacia-table td:nth-child(4) {
+    width: 20%;
+    min-width: 120px;
 }
 
 /* HEADERS DE TABLA - CORREGIDOS */
@@ -1058,19 +1080,20 @@ body::after {
             var(--primary-cyber), 
             var(--secondary-cyber));
     color: var(--accent-neon);
-    padding: var(--spacing-md) var(--spacing-lg); /* Padding estándar */
+    padding: var(--spacing-md) var(--spacing-lg);
     text-align: left;
     font-family: var(--font-cyber);
     font-weight: 600;
     font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em; /* Reducido para mejor legibilidad */
+    letter-spacing: 0.05em;
     position: sticky;
     top: 0;
     z-index: 10;
     border-bottom: 2px solid var(--accent-neon);
     text-shadow: 0 0 5px rgba(100, 255, 218, 0.5);
-    white-space: nowrap; /* Evita que el texto se rompa */
+    white-space: nowrap;
+    vertical-align: middle;
 }
 
 @media (min-width: 640px) {
@@ -1082,11 +1105,12 @@ body::after {
 
 /* CELDAS DE TABLA - CORREGIDAS */
 .farmacia-table td {
-    padding: var(--spacing-md) var(--spacing-lg); /* Padding consistente con th */
+    padding: var(--spacing-md) var(--spacing-lg);
     border-bottom: 1px solid rgba(42, 52, 65, 0.5);
-    vertical-align: top;
+    vertical-align: middle;
     color: #ccd6f6;
-    line-height: 1.5; /* Mejora legibilidad */
+    line-height: 1.5;
+    word-wrap: break-word;
 }
 
 @media (min-width: 640px) {
@@ -1097,7 +1121,7 @@ body::after {
 
 /* FILAS DE TABLA - EFECTOS CORREGIDOS */
 .farmacia-row {
-    transition: all 0.3s var(--smooth); /* Transición más suave */
+    transition: all 0.3s var(--smooth);
     position: relative;
     cursor: pointer;
 }
@@ -1120,7 +1144,6 @@ body::after {
         linear-gradient(135deg, 
             rgba(0, 255, 136, 0.05) 0%, 
             rgba(0, 212, 255, 0.05) 100%);
-    /* REMOVIDO: transform que causaba desalineación */
     box-shadow: inset 0 0 20px rgba(0, 255, 136, 0.1);
 }
 
@@ -1132,82 +1155,7 @@ body::after {
     border-bottom: none;
 }
 
-/* RESPONSIVE MOBILE - TABLA COMO CARDS */
-@media (max-width: 768px) {
-    .farmacia-table,
-    .farmacia-table thead,
-    .farmacia-table tbody,
-    .farmacia-table th,
-    .farmacia-table td,
-    .farmacia-table tr {
-        display: block;
-    }
-    
-    .farmacia-table thead tr {
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
-    }
-    
-    .farmacia-table tr {
-        background: 
-            linear-gradient(135deg, 
-                rgba(22, 33, 62, 0.9) 0%, 
-                rgba(26, 31, 58, 0.9) 100%);
-        border: 1px solid rgba(0, 255, 136, 0.3);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-3d);
-        margin-bottom: var(--spacing-lg);
-        padding: var(--spacing-lg);
-        position: relative;
-        transition: transform 0.3s var(--smooth);
-    }
-    
-    .farmacia-table tr:hover {
-        transform: translateX(4px);
-        box-shadow: var(--glow-primary), var(--shadow-3d);
-    }
-    
-    .farmacia-table td {
-        border: none;
-        padding: var(--spacing-sm) 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        min-height: 40px;
-    }
-    
-    .farmacia-table td:before {
-        content: attr(data-label) ":";
-        font-weight: 600;
-        color: var(--accent-blue);
-        flex: 1;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.05em;
-        font-family: var(--font-cyber);
-    }
-    
-    .farmacia-table td > * {
-        flex: 2;
-        text-align: right;
-    }
-    
-    /* Separadores visuales */
-    .farmacia-table td:not(:last-child) {
-        border-bottom: 1px solid rgba(42, 52, 65, 0.3);
-        padding-bottom: var(--spacing-sm);
-        margin-bottom: var(--spacing-sm);
-    }
-    
-    /* Ocultar columnas menos importantes en móvil muy pequeño */
-    .farmacia-table th:nth-child(4),
-    .farmacia-table td:nth-child(4) {
-        display: none;
-    }
-}
-
-/* 🏪 ELEMENTOS FARMACIA INTERACTIVOS */
+/* 🏪 ELEMENTOS FARMACIA CORREGIDOS */
 .farmacia-name {
     display: flex;
     align-items: center;
@@ -1216,6 +1164,8 @@ body::after {
     font-weight: 600;
     color: var(--accent-neon);
     transition: all 0.3s var(--elastic);
+    width: 100%;
+    min-height: 2.5rem;
 }
 
 @media (min-width: 640px) {
@@ -1228,6 +1178,7 @@ body::after {
     flex-shrink: 0;
     filter: drop-shadow(0 0 5px var(--accent-blue));
     transition: all 0.4s var(--bounce);
+    margin-right: var(--spacing-sm);
 }
 
 .farmacia-row:hover .farmacia-name i {
@@ -1236,10 +1187,19 @@ body::after {
     filter: drop-shadow(0 0 15px var(--quantum-green));
 }
 
+.farmacia-name span {
+    color: var(--accent-neon);
+    font-weight: 600;
+    text-shadow: 0 0 3px rgba(100, 255, 218, 0.3);
+    flex: 1;
+}
+
 .telefono-container {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
+    align-items: flex-start;
+    width: 100%;
 }
 
 @media (min-width: 640px) {
@@ -1322,6 +1282,8 @@ body::after {
     font-size: 0.875rem;
     scrollbar-width: thin;
     scrollbar-color: var(--accent-neon) transparent;
+    width: 100%;
+    padding-right: var(--spacing-xs);
 }
 
 .descripcion-container::-webkit-scrollbar {
@@ -1334,18 +1296,124 @@ body::after {
     box-shadow: 0 0 3px var(--accent-neon);
 }
 
-/* 🎬 Action Buttons */
+/* 🎬 Action Buttons CORREGIDOS */
 .action-buttons {
     display: flex;
     gap: var(--spacing-xs);
     justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
 }
 
 @media (min-width: 640px) {
-    .action-buttons { gap: var(--spacing-sm); }
+    .action-buttons { 
+        gap: var(--spacing-sm);
+        flex-wrap: nowrap;
+    }
 }
 
-/* 📱 Empty State */
+/* RESPONSIVE MOBILE - TABLA COMO CARDS MEJORADO */
+@media (max-width: 767px) {
+    .farmacia-table,
+    .farmacia-table thead,
+    .farmacia-table tbody,
+    .farmacia-table th,
+    .farmacia-table td,
+    .farmacia-table tr {
+        display: block;
+    }
+    
+    .farmacia-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    
+    .farmacia-table tr {
+        background: 
+            linear-gradient(135deg, 
+                rgba(22, 33, 62, 0.9) 0%, 
+                rgba(26, 31, 58, 0.9) 100%);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-3d);
+        margin-bottom: var(--spacing-lg);
+        padding: var(--spacing-lg);
+        position: relative;
+        transition: transform 0.3s var(--smooth);
+    }
+    
+    .farmacia-table tr:hover {
+        transform: translateX(4px);
+        box-shadow: var(--glow-primary), var(--shadow-3d);
+    }
+    
+    .farmacia-table td {
+        border: none;
+        padding: var(--spacing-sm) 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        min-height: 40px;
+    }
+    
+    .farmacia-table td:before {
+        content: attr(data-label) ":";
+        font-weight: 600;
+        color: var(--accent-blue);
+        flex: 0 0 40%;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        font-family: var(--font-cyber);
+        margin-right: var(--spacing-sm);
+    }
+    
+    .farmacia-table td > * {
+        flex: 1;
+        text-align: left;
+        width: 100%;
+    }
+    
+    .farmacia-table td:not(:last-child) {
+        border-bottom: 1px solid rgba(42, 52, 65, 0.3);
+        padding-bottom: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .farmacia-table th,
+    .farmacia-table td {
+        display: flex !important;
+    }
+    
+    .farmacia-table td .farmacia-name {
+        justify-content: flex-start;
+    }
+    
+    .farmacia-table td .telefono-container {
+        align-items: flex-start;
+    }
+    
+    .farmacia-table td .action-buttons {
+        justify-content: flex-start;
+    }
+}
+
+/* DESKTOP - ASEGURAR VISIBILIDAD COMPLETA */
+@media (min-width: 768px) {
+    .farmacia-table th,
+    .farmacia-table td {
+        display: table-cell !important;
+    }
+    
+    .farmacia-table th:nth-child(n),
+    .farmacia-table td:nth-child(n) {
+        display: table-cell !important;
+    }
+}
+
+/* 📱 Empty State CORREGIDO */
 .empty-state {
     text-align: center;
     padding: var(--spacing-2xl);
@@ -1401,7 +1469,6 @@ body::after {
     .modal { padding: var(--spacing-xl); }
 }
 
-/* Modal desde abajo en móvil */
 @media (max-width: 768px) {
     .modal {
         padding: 0;
@@ -1501,7 +1568,6 @@ body::after {
     .modal-header { padding: var(--spacing-xl); }
 }
 
-/* Handle de arrastre en modal móvil */
 @media (max-width: 768px) {
     .modal-header::before {
         content: '';
@@ -1891,125 +1957,6 @@ mark {
 .text-neon { color: var(--accent-neon); }
 .text-matrix { color: var(--quantum-green); }
 
-/* 📱 MOBILE OPTIMIZATIONS AVANZADAS */
-@media (max-width: 640px) {
-    body { font-size: 1rem; }
-    .container { padding: var(--spacing-sm); }
-    
-    /* Mejorar legibilidad en móvil */
-    .farmacia-name {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-xs);
-    }
-    
-    .descripcion-container {
-        max-height: 60px;
-    }
-}
-
-/* 📊 TABLET OPTIMIZATIONS */
-@media (min-width: 641px) and (max-width: 1023px) {
-    .stats-container {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .panel-header {
-        flex-direction: column;
-        gap: var(--spacing-lg);
-        align-items: stretch;
-    }
-    
-    .search-section {
-        flex-direction: column;
-        gap: var(--spacing-md);
-    }
-}
-
-/* 🖥️ DESKTOP OPTIMIZATIONS */
-@media (min-width: 1024px) {
-    .action-buttons {
-        gap: var(--spacing-md);
-    }
-    
-    .modal-content {
-        max-width: 700px;
-    }
-    
-    .btn:hover {
-        transform: translateY(-2px);
-    }
-}
-
-/* 🎨 PRINT STYLES */
-@media print {
-    .header,
-    .connection-status,
-    .panel-actions,
-    .search-section,
-    .action-buttons,
-    .activity-section,
-    .toast-container,
-    .cyber-particles {
-        display: none !important;
-    }
-    
-    .container { padding: 0; }
-    
-    .management-panel {
-        box-shadow: none;
-        border: 1px solid #000;
-    }
-    
-    .farmacia-table th {
-        background: #f0f0f0 !important;
-        color: #000 !important;
-    }
-}
-
-/* 🎯 ACCESSIBILITY MEJORADO */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-.btn:focus,
-input:focus,
-textarea:focus,
-select:focus {
-    outline: 2px solid var(--accent-neon);
-    outline-offset: 2px;
-}
-
-/* Focus visible para mejor accesibilidad */
-.btn:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-    outline: 2px solid var(--accent-neon);
-    outline-offset: 2px;
-}
-
-/* 🎨 Utilidades adicionales */
-.sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
-
-.text-center { text-align: center; }
-.font-medium { font-weight: 500; }
-.font-bold { font-weight: 700; }
-
 /* 💫 EFECTOS ESPECIALES FINALES */
 .ultra-interactive {
     transition: all 0.4s var(--elastic);
@@ -2038,7 +1985,6 @@ select:focus-visible {
     opacity: 1;
 }
 
-/* 🎮 EFECTOS HOVER ULTRA AVANZADOS */
 .morphing-button {
     transition: all 0.6s var(--morphing);
 }
@@ -2048,7 +1994,6 @@ select:focus-visible {
     padding: var(--spacing-lg) var(--spacing-2xl);
 }
 
-/* 🌊 EFECTOS DE ONDA */
 @keyframes ripple {
     0% {
         transform: scale(0);
@@ -2078,7 +2023,6 @@ select:focus-visible {
     animation: ripple 0.6s ease-out;
 }
 
-/* 🎯 EFECTOS DE TARGETING */
 .target-effect {
     position: relative;
 }
@@ -2112,7 +2056,6 @@ select:focus-visible {
     }
 }
 
-/* 🌟 EFECTOS DE ESTRELLA */
 @keyframes starBurst {
     0% { 
         transform: rotate(0deg) scale(0); 
@@ -2133,7 +2076,6 @@ select:focus-visible {
     animation: starBurst 1s ease-out infinite;
 }
 
-/* 🎮 EFECTOS GAMING ESPECIALES */
 .gaming-border {
     position: relative;
     overflow: hidden;
@@ -2156,7 +2098,6 @@ select:focus-visible {
     100% { transform: rotate(360deg); }
 }
 
-/* 💎 EFECTOS DE CRISTAL */
 .crystal-effect {
     backdrop-filter: blur(20px) saturate(180%);
     background: 
@@ -2169,7 +2110,6 @@ select:focus-visible {
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-/* 🌈 EFECTOS DE ARCO IRIS */
 @keyframes rainbow {
     0% { filter: hue-rotate(0deg); }
     100% { filter: hue-rotate(360deg); }
@@ -2179,7 +2119,6 @@ select:focus-visible {
     animation: rainbow 3s linear infinite;
 }
 
-/* 🚀 EFECTOS DE TELETRANSPORTE */
 @keyframes teleport {
     0% { 
         transform: scale(1); 
@@ -2202,7 +2141,6 @@ select:focus-visible {
     animation: teleport 0.8s var(--elastic);
 }
 
-/* 🎭 EFECTOS DE MÁSCARA REVELADORA */
 .reveal-mask {
     position: relative;
     overflow: hidden;
@@ -2226,7 +2164,6 @@ select:focus-visible {
     left: 100%;
 }
 
-/* 🌟 EFECTOS FINALES DE INMERSIÓN */
 .pulse-glow { 
     animation: pulseGlow 2s ease-in-out infinite; 
 }
@@ -2244,7 +2181,6 @@ select:focus-visible {
     animation: float 6s ease-in-out infinite; 
 }
 
-/* 🎮 CURSOR INTERACTIONS FINAL */
 .interactive-cursor:hover {
     cursor: none;
 }
@@ -2264,7 +2200,6 @@ select:focus-visible {
     100% { transform: scale(1) rotate(360deg); }
 }
 
-/* 🔥 EFECTOS DE FUEGO FINAL */
 @keyframes fireGlow {
     0%, 100% { 
         text-shadow: 
@@ -2284,14 +2219,12 @@ select:focus-visible {
     animation: fireGlow 2s ease-in-out infinite alternate;
 }
 
-/* 🌟 UTILIDADES FINALES DE PERFORMANCE */
 .gpu-accelerated {
     transform: translateZ(0);
     will-change: transform;
     backface-visibility: hidden;
 }
 
-/* 🔄 ESTADOS DE LOADING ESPECÍFICOS FINALES */
 .btn.loading {
     position: relative;
     color: transparent;
@@ -2316,11 +2249,15 @@ select:focus-visible {
     100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* 📊 RESPONSIVE FINAL OPTIMIZATIONS */
-@media (max-width: 480px) {
+/* 📱 MOBILE OPTIMIZATIONS FINALES */
+@media (max-width: 640px) {
+    body { font-size: 1rem; }
+    .container { padding: var(--spacing-sm); }
+    
     .header h1 { 
         font-size: 1.5rem; 
         text-align: center;
+        justify-content: center;
     }
     
     .stat-card {
@@ -2335,41 +2272,129 @@ select:focus-visible {
         font-size: 1.25rem;
     }
     
-    /* Reducir efectos en dispositivos muy pequeños */
     .particle { 
         animation-duration: 8s; 
         width: 2px;
         height: 2px;
     }
     
-    .cyber-particles .particle:nth-child(n+20) {
-        display: none; /* Menos partículas en móviles pequeños */
+    .cyber-particles .particle:nth-child(n+15) {
+        display: none;
+    }
+    
+    .farmacia-name {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .descripcion-container {
+        max-height: 60px;
     }
 }
 
-/* 🌟 FINAL TOUCH - CONFIGURACIÓN COMPLETA */
-@supports (backdrop-filter: blur(1px)) {
-    .glass-morphism {
-        backdrop-filter: blur(20px) saturate(180%);
-        background: rgba(255, 255, 255, 0.1);
+/* 📊 Tablet Optimizations */
+@media (min-width: 641px) and (max-width: 1023px) {
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .panel-header {
+        flex-direction: column;
+        gap: var(--spacing-lg);
+        align-items: stretch;
+    }
+    
+    .search-section {
+        flex-direction: column;
+        gap: var(--spacing-md);
     }
 }
 
-/* 🎯 ÚLTIMO NIVEL DE INMERSIÓN */
-.ultra-immersive-final {
-    position: relative;
-    transition: all 0.4s var(--elastic);
+/* 🖥️ Desktop Optimizations */
+@media (min-width: 1024px) {
+    .action-buttons {
+        gap: var(--spacing-md);
+    }
+    
+    .modal-content {
+        max-width: 700px;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+    }
 }
 
-.ultra-immersive-final:hover {
-    transform: translateZ(20px);
-    filter: 
-        brightness(1.2) 
-        saturate(1.4) 
-        drop-shadow(0 0 20px rgba(0, 255, 136, 0.4));
+/* 🎨 Print Styles */
+@media print {
+    .header,
+    .connection-status,
+    .panel-actions,
+    .search-section,
+    .action-buttons,
+    .activity-section,
+    .toast-container,
+    .cyber-particles {
+        display: none !important;
+    }
+    
+    .container { padding: 0; }
+    
+    .management-panel {
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+    
+    .farmacia-table th {
+        background: #f0f0f0 !important;
+        color: #000 !important;
+    }
 }
 
-/* 🔥 SISTEMA COMPLETO ACTIVADO */
+/* 🎯 Accessibility Mejorado */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+.btn:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    outline: 2px solid var(--accent-neon);
+    outline-offset: 2px;
+}
+
+.btn:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--accent-neon);
+    outline-offset: 2px;
+}
+
+/* 🎨 Utilidades adicionales */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.text-center { text-align: center; }
+.font-medium { font-weight: 500; }
+.font-bold { font-weight: 700; }
+
+/* 🌟 FINALIZACIÓN COMPLETA DEL SISTEMA INMERSIVO */
 .system-ready {
     animation: systemBoot 2s ease-out;
 }
@@ -2392,5 +2417,17 @@ select:focus-visible {
     }
 }
 
-/* ✨ FINALIZACIÓN DEL SISTEMA INMERSIVO */
+.ultra-immersive-final {
+    position: relative;
+    transition: all 0.4s var(--elastic);
+}
 
+.ultra-immersive-final:hover {
+    transform: translateZ(20px);
+    filter: 
+        brightness(1.2) 
+        saturate(1.4) 
+        drop-shadow(0 0 20px rgba(0, 255, 136, 0.4));
+}
+
+/* ✅ SISTEMA COMPLETO Y TABLA CORREGIDA */
