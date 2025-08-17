@@ -2,78 +2,102 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"    content="width=device-width,initial-scale=1">
+    <meta name="description" content="Sistema corporativo de gestión y control de farmacias de la zona 1561">
+    <meta name="theme-color" content="#1e3a8a">
     <title>Gestión Farmacias Zona 1561</title>
+
+    <!-- Pre‑connect para Font Awesome -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+          rel="stylesheet" integrity="sha512-..." crossorigin="anonymous">
+
+    <!-- Scripts (deferred) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+            defer></script>
+    <script src="script.js" defer></script>
 </head>
+
 <body>
-    <div class="container">
-        <!-- Header Corporativo -->
-        <header class="header">
-            <h1><i class="fas fa-pills"></i> Gestión Farmacias Zona 1561</h1>
-            <p>Sistema corporativo de gestión y control</p>
-        </header>
-
-        <!-- Estado de Conexión -->
-        <div class="connection-status" id="connectionStatus">
-            <div class="status-card">
-                <i class="fas fa-spinner fa-spin" id="statusIcon"></i>
-                <h3 id="statusTitle">Conectando...</h3>
-                <p id="statusMessage">Inicializando sistema...</p>
-            </div>
+    <!-- ==================== HEADER ==================== -->
+    <header class="header" role="banner">
+        <div class="header-inner">
+            <h1 class="app-title">
+                <i class="fas fa-pills" aria-hidden="true"></i>
+                <span>Gestión Farmacias Zona 1561</span>
+            </h1>
+            <p class="app-subtitle">Sistema corporativo de gestión y control</p>
         </div>
+    </header>
 
-        <!-- Estadísticas -->
-        <div class="stats-container">
+    <main class="main-content" role="main">
+        <!-- ==================== ESTADO DE CONEXIÓN ==================== -->
+        <section class="connection-status" id="connectionStatus" aria-live="polite">
+            <div class="status-card">
+                <i class="fas fa-spinner fa-spin" id="statusIcon" aria-hidden="true"></i>
+                <h3 id="statusTitle">Conectando…</h3>
+                <p id="statusMessage">Inicializando sistema…</p>
+            </div>
+        </section>
+
+        <!-- ==================== ESTADÍSTICAS ==================== -->
+        <section class="stats-container" aria-label="Resumen de farmacias">
             <div class="stat-card">
-                <i class="fas fa-store"></i>
+                <i class="fas fa-store" aria-hidden="true"></i>
                 <div class="stat-info">
                     <span class="stat-number" id="totalFarmacias">0</span>
                     <span class="stat-label">Farmacias</span>
                 </div>
             </div>
             <div class="stat-card">
-                <i class="fas fa-phone"></i>
+                <i class="fas fa-phone" aria-hidden="true"></i>
                 <div class="stat-info">
                     <span class="stat-number" id="conTelefono">0</span>
                     <span class="stat-label">Con Teléfono</span>
                 </div>
             </div>
             <div class="stat-card">
-                <i class="fas fa-clock"></i>
+                <i class="fas fa-clock" aria-hidden="true"></i>
                 <div class="stat-info">
                     <span class="stat-number" id="ultimaActualizacion">--:--</span>
                     <span class="stat-label">Última Actualización</span>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Panel de Gestión -->
-        <div class="management-panel">
-            <div class="panel-header">
-                <h2><i class="fas fa-cogs"></i> Panel de Gestión</h2>
+        <!-- ==================== PANEL DE GESTIÓN ==================== -->
+        <section class="management-panel" aria-labelledby="panelTitle">
+            <header class="panel-header">
+                <h2 id="panelTitle"><i class="fas fa-cogs" aria-hidden="true"></i> Panel de Gestión</h2>
                 <div class="panel-actions">
-                    <button onclick="showAddModal()" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Agregar Farmacia
+                    <button type="button" class="btn btn-primary" data-action="show-add-modal">
+                        <i class="fas fa-plus" aria-hidden="true"></i> Agregar Farmacia
                     </button>
-                    <button onclick="exportData()" class="btn btn-success">
-                        <i class="fas fa-file-excel"></i> Exportar
+                    <button type="button" class="btn btn-success" data-action="export-data">
+                        <i class="fas fa-file-excel" aria-hidden="true"></i> Exportar
                     </button>
-                    <button onclick="loadFarmacias()" class="btn btn-info">
-                        <i class="fas fa-sync"></i> Actualizar
+                    <button type="button" class="btn btn-info" data-action="load-farmacias">
+                        <i class="fas fa-sync" aria-hidden="true"></i> Actualizar
                     </button>
                 </div>
-            </div>
+            </header>
 
-            <!-- Búsqueda -->
+            <!-- Búsqueda y filtros -->
             <div class="search-section">
-                <div class="search-container">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Buscar por nombre, teléfono o descripción...">
+                <div class="search-container" role="search">
+                    <label for="searchInput" class="visually-hidden">Buscar farmacias</label>
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="search"
+                           id="searchInput"
+                           placeholder="Buscar por nombre, teléfono o descripción…"
+                           autocomplete="off"
+                           aria-label="Buscar por nombre, teléfono o descripción">
                 </div>
+
                 <div class="search-filters">
-                    <select id="filterTelefono">
+                    <label for="filterTelefono" class="visually-hidden">Filtro por teléfono</label>
+                    <select id="filterTelefono" aria-label="Filtrar por disponibilidad de teléfono">
                         <option value="">Todos</option>
                         <option value="con">Con Teléfono</option>
                         <option value="sin">Sin Teléfono</option>
@@ -81,135 +105,168 @@
                 </div>
             </div>
 
-            <!-- Tabla de Farmacias -->
+            <!-- Lista de farmacias -->
             <div class="farmacia-list">
                 <div class="table-container">
-                    <table class="farmacia-table">
+                    <table class="farmacia-table" aria-describedby="farmaciaTableDesc">
+                        <caption id="farmaciaTableDesc" class="visually-hidden">
+                            Lista de farmacias con acciones de edición y eliminación
+                        </caption>
                         <thead>
                             <tr>
-                                <th>Nombre</th>
-                                <th>Teléfono</th>
-                                <th>Descripción</th>
-                                <th>Acciones</th>
+                                <th scope="col">Nombre</th>
+                                <th scope="col">Teléfono</th>
+                                <th scope="col">Descripción</th>
+                                <th scope="col">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="farmaciaTableBody">
-                            <!-- Las farmacias se cargarán aquí -->
+                            <!-- Filas generadas dinámicamente -->
                         </tbody>
                     </table>
                 </div>
-                <div id="emptyState" class="empty-state" style="display: none;">
-                    <i class="fas fa-store"></i>
+
+                <div id="emptyState" class="empty-state" role="status" aria-live="polite" hidden>
+                    <i class="fas fa-store" aria-hidden="true"></i>
                     <h3>No hay farmacias registradas</h3>
                     <p>Comienza agregando tu primera farmacia</p>
-                    <button onclick="showAddModal()" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Agregar Primera Farmacia
+                    <button type="button" class="btn btn-primary" data-action="show-add-modal">
+                        <i class="fas fa-plus" aria-hidden="true"></i> Agregar Primera Farmacia
                     </button>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Modal para Agregar/Editar -->
-        <div id="farmaciaModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
+        <!-- ==================== MODAL DE AGREGAR / EDITAR ==================== -->
+        <dialog id="farmaciaModal" class="modal" aria-labelledby="modalTitle">
+            <form id="farmaciaForm" novalidate>
+                <header class="modal-header">
                     <h3 id="modalTitle">Agregar Farmacia</h3>
-                    <span class="close" onclick="closeModal()">&times;</span>
-                </div>
-                <form id="farmaciaForm">
+                    <button type="button" class="close" data-action="close-modal" aria-label="Cerrar">
+                        &times;
+                    </button>
+                </header>
+
+                <div class="modal-body">
                     <div class="form-group">
-                        <label for="farmacianombre">
-                            <i class="fas fa-store"></i> Nombre de la Farmacia *
+                        <label for="farmaciaNombre">
+                            <i class="fas fa-store" aria-hidden="true"></i>
+                            Nombre de la Farmacia <span aria-hidden="true">*</span>
                         </label>
-                        <input type="text" id="farmaciaNombre" required 
+                        <input type="text"
+                               id="farmaciaNombre"
+                               name="nombre"
+                               required
+                               autocomplete="organization"
                                placeholder="Ej: Farmacia San Rafael">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="farmaciaTelefono">
-                            <i class="fas fa-phone"></i> Teléfono
+                            <i class="fas fa-phone" aria-hidden="true"></i>
+                            Teléfono
                         </label>
-                        <input type="tel" id="farmaciaTelefono" 
+                        <input type="tel"
+                               id="farmaciaTelefono"
+                               name="telefono"
+                               autocomplete="tel"
                                placeholder="Ej: 3001234567">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="farmaciaDescripcion">
-                            <i class="fas fa-clipboard-list"></i> Descripción
+                            <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                            Descripción
                         </label>
-                        <textarea id="farmaciaDescripcion" rows="4" 
+                        <textarea id="farmaciaDescripcion"
+                                  name="descripcion"
+                                  rows="4"
                                   placeholder="Información adicional, horarios, contactos, observaciones..."></textarea>
                     </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" onclick="closeModal()" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancelar
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Guardar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                </div>
 
-        <!-- Activity Log -->
-        <div class="activity-section">
-            <h3><i class="fas fa-list"></i> Registro de Actividades</h3>
-            <div id="logContainer" class="log-container"></div>
-            <button onclick="clearLog()" class="btn btn-secondary">
-                <i class="fas fa-broom"></i> Limpiar Registro
+                <footer class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-action="close-modal">
+                        <i class="fas fa-times" aria-hidden="true"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save" aria-hidden="true"></i> Guardar
+                    </button>
+                </footer>
+            </form>
+        </dialog>
+
+        <!-- ==================== REGISTRO DE ACTIVIDADES ==================== -->
+        <section class="activity-section" aria-labelledby="activityTitle">
+            <h3 id="activityTitle"><i class="fas fa-list" aria-hidden="true"></i> Registro de Actividades</h3>
+            <ul id="logContainer" class="log-container" aria-live="polite"></ul>
+            <button type="button" class="btn btn-secondary" data-action="clear-log">
+                <i class="fas fa-broom" aria-hidden="true"></i> Limpiar Registro
             </button>
-        </div>
-    </div>
+        </section>
+    </main>
 
-    <!-- Firebase - Tu Configuración que YA FUNCIONA -->
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer" role="contentinfo">
+        <div class="footer-inner">
+            <p>&copy; <span id="currentYear"></span> Gestión Farmacias Zona 1561 — Hecho con <span aria-hidden="true">❤️</span> para tu negocio</p>
+        </div>
+    </footer>
+
+    <!-- ==================== FIREBASE (Módulo) ==================== -->
     <script type="module">
         try {
-            console.log('🚀 Iniciando Firebase para Farmacias...');
-            
-            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js");
-            const { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy } = await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js");
+            console.log('🚀 Iniciando Firebase…');
 
-            // Tu configuración que YA FUNCIONA
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js');
+            const {
+                getFirestore,
+                collection,
+                addDoc,
+                getDocs,
+                updateDoc,
+                deleteDoc,
+                doc,
+                query,
+                orderBy
+            } = await import('https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js');
+
             const firebaseConfig = {
-                apiKey: "AIzaSyAaVSb70OFIoX48T9GbLmTcdXOSvKv2pRk",
-                authDomain: "zona1561-4de30.firebaseapp.com",
-                projectId: "zona1561-4de30",
-                storageBucket: "zona1561-4de30.firebasestorage.app",
-                messagingSenderId: "451366030738",
-                appId: "1:451366030738:web:e638db51fbe24f6a48054b"
+                apiKey:            'AIzaSyAaVSb70OFIoX48T9GbLmTcdXOSvKv2pRk',
+                authDomain:        'zona1561-4de30.firebaseapp.com',
+                projectId:         'zona1561-4de30',
+                storageBucket:     'zona1561-4de30.firebasestorage.app',
+                messagingSenderId: '451366030738',
+                appId:             '1:451366030738:web:e638db51fbe24f6a48054b'
             };
 
-            console.log('📊 Inicializando Firebase...');
             const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
+            const db  = getFirestore(app);
 
-            // Hacer disponible globalmente
-            window.firebaseApp = app;
-            window.firebaseDB = db;
-            window.firebaseCollection = collection;
-            window.firebaseAddDoc = addDoc;
-            window.firebaseGetDocs = getDocs;
-            window.firebaseUpdateDoc = updateDoc;
-            window.firebaseDeleteDoc = deleteDoc;
-            window.firebaseDoc = doc;
-            window.firebaseQuery = query;
-            window.firebaseOrderBy = orderBy;
-
-            window.firebaseReady = true;
+            // Exponer API mínima para el resto del código
+            window.firebase = {
+                db,
+                collection,
+                addDoc,
+                getDocs,
+                updateDoc,
+                deleteDoc,
+                doc,
+                query,
+                orderBy
+            };
             window.dispatchEvent(new CustomEvent('firebaseReady'));
 
-            console.log('🔥 Firebase para Farmacias listo');
-
-        } catch (error) {
-            console.error('❌ Error Firebase:', error);
-            window.firebaseError = error;
-            window.dispatchEvent(new CustomEvent('firebaseError', { detail: error }));
+            console.log('🔥 Firebase listo');
+        } catch (e) {
+            console.error('❌ Error al iniciar Firebase', e);
+            window.dispatchEvent(new CustomEvent('firebaseError', {detail:e}));
         }
     </script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="script.js"></script>
+    <!-- Script de utilidad para el año del footer -->
+    <script defer>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>
