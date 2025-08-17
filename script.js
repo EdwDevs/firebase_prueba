@@ -1,468 +1,518 @@
-/**
- * 🏥 SISTEMA DE GESTIÓN DE FARMACIAS ZONA 1561
- * Refactorizado – versión 3.1.0
- * @author  Equipo de desarrollo
- * @date    2025‑08‑17
+/** 
+ * 🏥 SISTEMA DE GESTIÓN DE FARMACIAS ZONA 1561 
+ * Basado en Firebase que YA FUNCIONA 
+ * @version: 3.1.0 // Actualizado para refinamientos
  */
 
-(() => {
-    // ---------- Constantes y selectores ----------
-    const COLLECTION_NAME = 'farmacias_zona1561';
-    const SELECTORS = {
-        searchInput: '#searchInput',
-        filterTelefono: '#filterTelefono',
-        farmaciaForm: '#farmaciaForm',
-        modal: '#farmaciaModal',
-        modalTitle: '#modalTitle',
-        logContainer: '#logContainer',
-        statusCard: '.status-card',
-        statusIcon: '#statusIcon',
-        statusTitle: '#statusTitle',
-        statusMessage: '#statusMessage',
-        tableBody: '#farmaciaTableBody',
-        emptyState: '#emptyState',
-        totalFarmacias: '#totalFarmacias',
-        conTelefono: '#conTelefono',
-        ultimaActualizacion: '#ultimaActualizacion'
-    };
+// 🎯 Variables globales
+let firebaseReady = false;
+let farmacias = [];
+let editingId = null;
+const COLLECTION_NAME = 'farmacias_zona1561';
 
-    // ---------- Estado interno ----------
-    let firebaseReady = false;
-    let editingId = null;
-    let farmacias = [];
+// 🚀 Inicialización
+document.addEventListener('DOMContentLoaded', () => {
+    log('🚀 Iniciando Sistema de Farmacias...', 'info');
+    updateConnectionStatus('connecting', 'Conectando...', 'Inicializando sistema...');
+    setupEventListeners();
+    // Escuchar Firebase
+    window.addEventListener('firebaseReady', handleFirebaseReady);
+    window.addEventListener('firebaseError', handleFirebaseError);
+    // Timeout de seguridad
+    setTimeout(checkConnectionTimeout, 10000);
+});
 
-    // ---------- Referencias al DOM (caché) ----------
-    const elements = {};
-    for (const [key, selector] of Object.entries(SELECTORS)) {
-        elements[key] = document.querySelector(selector);
+// ✅ Firebase listo
+function handleFirebaseReady() {
+    firebaseReady = true;
+    log('✅ Firebase conectado - Sistema listo', 'success');
+    updateConnectionStatus('connected', '✅ Sistema Operativo', 'Conectado a Firebase zona1561-4de30');
+    // Cargar farmacias existentes
+    loadFarmacias();
+}
+
+// ❌ Error Firebase
+function handleFirebaseError(event) {
+    const error = event.detail;
+    log(`❌ Error Firebase: ${error.message}`, 'error');
+    updateConnectionStatus('error', '❌ Error Conexión', error.message);
+}
+
+// ⏰ Timeout de conexión
+function checkConnectionTimeout() {
+    if (!firebaseReady) {
+        log('⏰ Timeout - Trabajando en modo offline', 'warning');
+        updateConnectionStatus('error', '⏰ Modo Offline', 'Usando datos locales');
+        loadLocalFarmacias();
+    }
+}
+
+// 🎯 Configurar event listeners
+function setupEventListeners() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(filterFarmacias, 300));
     }
 
-    // ---------- Utilidades ----------
-    const log = (msg, type = 'info') => {
-        const container = elements.logContainer;
-        if (!container) return;
-        const ts = new Date().toLocaleTimeString('es-CO');
-        const icons = { info: 'ℹ️', success: '✅', warning: '⚠️', error: '❌' };
-        const entry = document.createElement('div');
-        entry.className = `log-entry ${type}`;
-        entry.innerHTML = `<span class="timestamp">[${ts}]</span> ${icons[type]} ${msg}`;
-        container.appendChild(entry);
-        container.scrollTop = container.scrollHeight;
-        console.log(`[Farmacias] ${msg}`);
-    };
+    const filterTelefono = document.getElementById('filterTelefono');
+    if (filterTelefono) {
+        filterTelefono.addEventListener('change', filterFarmacias);
+    }
 
-    const handleError = (context, error) => {
-        log(`❌ ${context}: ${error.message}`, 'error');
-        // fallback a localStorage cuando sea posible
-        if (context.includes('Firebase')) loadLocalFarmacias();
-    };
+    const form = document.getElementById('farmaciaForm');
+    if (form) {
+        form.addEventListener('submit', handleFormSubmit);
+    }
 
-    const debounce = (fn, delay) => {
-        let timer;
-        return (...args) => {
-            clearTimeout(timer);
-            timer = setTimeout(() => fn(...args), delay);
-        };
-    };
-
-    // ---------- Servicios ----------
-    const firebaseService = {
-        async getAll() {
-            const col = window.firebaseCollection(window.firebaseDB, COLLECTION_NAME);
-            const q = window.firebaseQuery(col, window.firebaseOrderBy('nombre'));
-            const snap = await window.firebaseGetDocs(q);
-            return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        },
-        async add(data) {
-            const col = window.firebaseCollection(window.firebaseDB, COLLECTION_NAME);
-            const ref = await window.firebaseAddDoc(col, data);
-            return { ...data, id: ref.id };
-        },
-        async update(id, data) {
-            const doc = window.firebaseDoc(window.firebaseDB, COLLECTION_NAME, id);
-            await window.firebaseUpdateDoc(doc, data);
-        },
-        async delete(id) {
-            const doc = window.firebaseDoc(window.firebaseDB, COLLECTION_NAME, id);
-            await window.firebaseDeleteDoc(doc);
-        }
-    };
-
-    const localService = {
-        key: 'farmacias_zona1561_local',
-        load() {
-            const raw = localStorage.getItem(this.key);
-            return raw ? JSON.parse(raw) : [];
-        },
-        save(data) {
-            localStorage.setItem(this.key, JSON.stringify(data));
-        },
-        clear() {
-            localStorage.removeItem(this.key);
-        }
-    };
-
-    const uiService = {
-        render(list) {
-            const tbody = elements.tableBody;
-            const empty = elements.emptyState;
-            if (!tbody) return;
-
-            tbody.innerHTML = '';
-            if (list.length === 0) {
-                elements.tableBody.closest('.table-container').style.display = 'none';
-                empty.style.display = 'block';
-                return;
-            }
-
-            elements.tableBody.closest('.table-container').style.display = 'block';
-            empty.style.display = 'none';
-
-            const fragment = document.createDocumentFragment();
-            list.forEach((farmacia, idx) => {
-                const row = document.createElement('tr');
-                row.className = 'farmacia-row';
-                row.innerHTML = uiService.rowTemplate(farmacia);
-                fragment.appendChild(row);
-            });
-            tbody.appendChild(fragment);
-            uiService.animateRows();
-        },
-        rowTemplate(f) {
-            const phoneBlock = f.telefono
-                ? `<div class="telefono-container">
-                       <a href="tel:${f.telefono}" class="btn-phone" aria-label="Llamar a ${f.telefono}">
-                           <i class="fas fa-phone"></i> ${f.telefono}
-                       </a>
-                       <a href="https://wa.me/57${f.telefono}" target="_blank" class="btn-whatsapp" aria-label="WhatsApp ${f.telefono}">
-                           <i class="fab fa-whatsapp"></i>
-                       </a>
-                   </div>`
-                : '<span class="no-phone">Sin teléfono</span>';
-
-            return `
-                <td>
-                    <div class="farmacia-name"><i class="fas fa-store"></i> <strong>${uiService.highlight(f.nombre)}</strong></div>
-                </td>
-                <td>${phoneBlock}</td>
-                <td><div class="descripcion-container">${uiService.highlight(f.descripcion || 'Sin descripción')}</div></td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn btn-edit" title="Editar" aria-label="Editar ${f.nombre}"
-                                onclick="farmaciaApp.editFarmacia('${f.id}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-delete" title="Eliminar" aria-label="Eliminar ${f.nombre}"
-                                onclick="farmaciaApp.deleteFarmacia('${f.id}', '${f.nombre.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button>
-                    </div>
-                </td>`;
-        },
-        highlight(text) {
-            const term = elements.searchInput.value.trim();
-            if (!term) return text;
-            const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const re = new RegExp(`(${esc})`, 'gi');
-            return text.replace(re, '<mark>$1</mark>');
-        },
-        animateRows() {
-            const rows = document.querySelectorAll('.farmacia-row');
-            rows.forEach((row, i) => {
-                row.style.opacity = '0';
-                row.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    row.classList.add('fade-in');
-                }, i * 50);
-            });
-        },
-        updateStats() {
-            const total = farmacias.length;
-            const withPhone = farmacias.filter(f => f.telefono).length;
-            const now = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-            elements.totalFarmacias.textContent = total;
-            elements.conTelefono.textContent = withPhone;
-            elements.ultimaActualizacion.textContent = now;
-        },
-        status(state, title, msg) {
-            const card = elements.statusCard;
-            const icon = elements.statusIcon;
-            const tTitle = elements.statusTitle;
-            const tMsg = elements.statusMessage;
-            if (!card) return;
-
-            card.className = 'status-card';
-            icon.className = state === 'connected' ? 'fas fa-check-circle success' :
-                             state === 'error' ? 'fas fa-exclamation-triangle error' :
-                             'fas fa-spinner fa-spin';
-
-            if (state === 'connected') card.classList.add('connected');
-            if (state === 'error') card.classList.add('error');
-
-            tTitle.textContent = title;
-            tMsg.textContent = msg;
-        }
-    };
-
-    // ---------- Carga inicial ----------
-    const init = () => {
-        log('🚀 Iniciando Sistema de Farmacias...', 'info');
-        uiService.status('connecting', 'Conectando...', 'Inicializando sistema...');
-        setupListeners();
-
-        window.addEventListener('firebaseReady', async () => {
-            firebaseReady = true;
-            log('✅ Firebase conectado - Sistema listo', 'success');
-            uiService.status('connected', '✅ Sistema Operativo', 'Conectado a Firebase zona1561-4de30');
-            await loadFromFirebase();
+    const modal = document.getElementById('farmaciaModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
         });
+    }
 
-        window.addEventListener('firebaseError', e => handleError('Firebase', e.detail));
+    // Teclas globales
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+    });
+}
 
-        setTimeout(() => {
-            if (!firebaseReady) {
-                log('⏰ Timeout - Trabajando en modo offline', 'warning');
-                uiService.status('error', '⏰ Modo Offline', 'Usando datos locales');
-                loadFromLocal();
-            }
-        }, 10000);
-    };
+// 📊 Cargar farmacias desde Firebase
+async function loadFarmacias() {
+    if (!firebaseReady) {
+        log('⚠️ Firebase no está listo', 'warning');
+        return;
+    }
+    try {
+        log('📊 Cargando farmacias desde Firebase...', 'info');
+        const farmaciaCollection = window.firebaseCollection(window.firebaseDB, COLLECTION_NAME);
+        const q = window.firebaseQuery(farmaciaCollection, window.firebaseOrderBy('nombre'));
+        const snapshot = await window.firebaseGetDocs(q);
+        farmacias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); // Simplificado
+        log(`✅ ${farmacias.length} farmacias cargadas`, 'success');
+        renderFarmacias();
+        updateStats();
+    } catch (error) {
+        log(`❌ Error cargando farmacias: ${error.message}`, 'error');
+        loadLocalFarmacias();
+    }
+}
 
-    // ---------- Event listeners ----------
-    const setupListeners = () => {
-        if (elements.searchInput) {
-            elements.searchInput.addEventListener('input', debounce(filterAndRender, 300));
-        }
-        if (elements.filterTelefono) {
-            elements.filterTelefono.addEventListener('change', filterAndRender);
-        }
-        if (elements.farmaciaForm) {
-            elements.farmaciaForm.addEventListener('submit', handleSubmit);
-        }
-        if (elements.modal) {
-            elements.modal.addEventListener('click', e => {
-                if (e.target === elements.modal) closeModal();
-            });
-        }
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') closeModal();
-        });
-    };
-
-    // ---------- Carga de datos ----------
-    const loadFromFirebase = async () => {
+// 💾 Cargar farmacias locales (fallback)
+function loadLocalFarmacias() {
+    const localData = localStorage.getItem('farmacias_zona1561_local');
+    if (localData) {
         try {
-            const data = await firebaseService.getAll();
-            farmacias = data;
-            log(`✅ ${farmacias.length} farmacias cargadas desde Firebase`, 'success');
-        } catch (err) {
-            handleError('Cargando farmacias desde Firebase', err);
-        } finally {
-            uiService.render(farmacias);
-            uiService.updateStats();
+            farmacias = JSON.parse(localData);
+            log(`📱 ${farmacias.length} farmacias cargadas desde localStorage`, 'info');
+        } catch (error) {
+            farmacias = [];
+            log(`❌ Error parseando localStorage: ${error.message}`, 'error');
         }
-    };
+    } else {
+        farmacias = [];
+    }
+    renderFarmacias();
+    updateStats();
+}
 
-    const loadFromLocal = () => {
-        farmacias = localService.load();
-        log(`📱 ${farmacias.length} farmacias cargadas desde localStorage`, 'info');
-        uiService.render(farmacias);
-        uiService.updateStats();
-    };
+// 💾 Guardar en localStorage
+function saveToLocalStorage() {
+    try {
+        localStorage.setItem('farmacias_zona1561_local', JSON.stringify(farmacias));
+    } catch (error) {
+        log(`❌ Error guardando en localStorage: ${error.message}`, 'error');
+    }
+}
 
-    // ---------- Filtrado ----------
-    const filterAndRender = () => {
-        const term = elements.searchInput.value.toLowerCase().trim();
-        const phoneFilter = elements.filterTelefono.value;
-        const filtered = farmacias.filter(f => {
-            const matchesSearch = !term ||
-                f.nombre?.toLowerCase().includes(term) ||
-                f.telefono?.toLowerCase().includes(term) ||
-                f.descripcion?.toLowerCase().includes(term);
-            const matchesPhone = !phoneFilter ||
-                (phoneFilter === 'con' && f.telefono) ||
-                (phoneFilter === 'sin' && !f.telefono);
-            return matchesSearch && matchesPhone;
-        });
-        uiService.render(filtered);
-        log(`🔍 Filtros aplicados: ${filtered.length}/${farmacias.length} farmacias`, 'info');
-    };
+// 🎨 Renderizar tabla de farmacias
+function renderFarmacias(farmaciasList = farmacias) {
+    const tableBody = document.getElementById('farmaciaTableBody');
+    const emptyState = document.getElementById('emptyState');
+    const tableContainer = document.querySelector('.table-container');
+    if (!tableBody || !emptyState || !tableContainer) return;
 
-    // ---------- Modal ----------
-    const openModal = (mode, data = {}) => {
-        elements.modalTitle.textContent = mode === 'edit' ? 'Editar Farmacia' : 'Agregar Nueva Farmacia';
-        elements.farmaciaForm.reset();
-        document.getElementById('farmaciaNombre').value = data.nombre || '';
-        document.getElementById('farmaciaTelefono').value = data.telefono || '';
-        document.getElementById('farmaciaDescripcion').value = data.descripcion || '';
-        editingId = mode === 'edit' ? data.id : null;
-        elements.modal.style.display = 'block';
-        document.getElementById('farmaciaNombre').focus();
-        log(`${mode === 'edit' ? '✏️' : '➕'} Modal ${mode === 'edit' ? 'de edición' : 'de alta'} abierto`, 'info');
-    };
+    tableBody.innerHTML = '';
+    if (farmaciasList.length === 0) {
+        tableContainer.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+    }
+    tableContainer.style.display = 'block';
+    emptyState.style.display = 'none';
 
-    window.showAddModal = () => openModal('add');
+    farmaciasList.forEach((farmacia, index) => {
+        const row = createFarmaciaRow(farmacia, index);
+        tableBody.appendChild(row);
+    });
+    // Animación de entrada
+    animateTableRows();
+}
 
-    // ---------- CRUD ----------
-    const handleSubmit = async e => {
-        e.preventDefault();
-        const nombre = document.getElementById('farmaciaNombre').value.trim();
-        const telefono = document.getElementById('farmaciaTelefono').value.trim();
-        const descripcion = document.getElementById('farmaciaDescripcion').value.trim();
+// 🏗️ Crear fila de farmacia
+function createFarmaciaRow(farmacia, index) {
+    const row = document.createElement('tr');
+    row.className = 'farmacia-row';
+    const telefonoDisplay = farmacia.telefono 
+        ? `<div class="telefono-container">
+             <a href="tel:${farmacia.telefono}" class="btn-phone">
+               <i class="fas fa-phone"></i> ${farmacia.telefono}
+             </a>
+             <a href="https://wa.me/57${farmacia.telefono}" target="_blank" class="btn-whatsapp" title="WhatsApp">
+               <i class="fab fa-whatsapp"></i>
+             </a>
+           </div>`
+        : '<span class="no-phone">Sin teléfono</span>';
 
-        if (!nombre) {
-            alert('El nombre de la farmacia es obligatorio');
-            return;
-        }
+    row.innerHTML = `
+        <td>
+            <div class="farmacia-name">
+                <i class="fas fa-store"></i>
+                <strong>${highlightSearch(farmacia.nombre)}</strong>
+            </div>
+        </td>
+        <td>${telefonoDisplay}</td>
+        <td>
+            <div class="descripcion-container">
+                ${highlightSearch(farmacia.descripcion || 'Sin descripción')}
+            </div>
+        </td>
+        <td>
+            <div class="action-buttons">
+                <button onclick="editFarmacia('${farmacia.id}')" class="btn btn-edit" title="Editar" aria-label="Editar farmacia">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deleteFarmacia('${farmacia.id}', '${farmacia.nombre.replace(/'/g, "\\'")}')" class="btn btn-delete" title="Eliminar" aria-label="Eliminar farmacia">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </td>
+    `;
+    return row;
+}
 
-        const payload = {
-            nombre,
-            telefono,
-            descripcion,
-            fechaActualizacion: new Date().toISOString()
-        };
+// 🔍 Resaltar términos de búsqueda
+function highlightSearch(text = '') { // Manejo de text undefined/null
+    const searchTerm = document.getElementById('searchInput')?.value.trim() || '';
+    if (!searchTerm) return text;
+    const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+}
 
-        try {
-            if (editingId) {
-                await updateFarmacia(editingId, payload);
-            } else {
-                payload.fechaCreacion = new Date().toISOString();
-                await addFarmacia(payload);
-            }
-            closeModal();
-        } catch (err) {
-            handleError('Guardando farmacia', err);
-            alert(`Error: ${err.message}`);
-        }
-    };
+// 🛡️ Escapar regex
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-    const addFarmacia = async data => {
-        if (firebaseReady) {
-            try {
-                const saved = await firebaseService.add(data);
-                farmacias.push(saved);
-                log(`✅ Farmacia "${saved.nombre}" agregada a Firebase`, 'success');
-            } catch (err) {
-                data.id = `local_${Date.now()}`;
-                farmacias.push(data);
-                log(`📱 Farmacia guardada localmente (error Firebase): ${err.message}`, 'warning');
-            }
-        } else {
-            data.id = `local_${Date.now()}`;
-            farmacias.push(data);
-            log('📱 Farmacia guardada localmente (sin Firebase)', 'warning');
-        }
-        localService.save(farmacias);
-        uiService.render(farmacias);
-        uiService.updateStats();
-    };
+// 🔍 Filtrar farmacias
+function filterFarmacias() {
+    const searchTerm = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
+    const phoneFilter = document.getElementById('filterTelefono')?.value || '';
+    const filtered = farmacias.filter(farmacia => {
+        const matchSearch = !searchTerm ||
+            farmacia.nombre.toLowerCase().includes(searchTerm) ||
+            (farmacia.telefono && farmacia.telefono.toLowerCase().includes(searchTerm)) ||
+            (farmacia.descripcion && farmacia.descripcion.toLowerCase().includes(searchTerm));
+        const matchPhone = !phoneFilter ||
+            (phoneFilter === 'con' && farmacia.telefono) ||
+            (phoneFilter === 'sin' && !farmacia.telefono);
+        return matchSearch && matchPhone;
+    });
+    renderFarmacias(filtered);
+    log(`🔍 Filtros aplicados: ${filtered.length}/${farmacias.length} farmacias`, 'info');
+}
 
-    const updateFarmacia = async (id, data) => {
-        const idx = farmacias.findIndex(f => f.id === id);
-        if (idx === -1) return;
+// ➕ Mostrar modal para agregar
+function showAddModal() {
+    const modalTitle = document.getElementById('modalTitle');
+    const form = document.getElementById('farmaciaForm');
+    const modal = document.getElementById('farmaciaModal');
+    if (!modalTitle || !form || !modal) return;
 
-        if (firebaseReady && !id.startsWith('local_')) {
-            try {
-                await firebaseService.update(id, data);
-                log('✅ Farmacia actualizada en Firebase', 'success');
-            } catch (err) {
-                log(`📱 Error Firebase, actualizando localmente: ${err.message}`, 'warning');
-            }
-        }
+    modalTitle.textContent = 'Agregar Nueva Farmacia';
+    form.reset();
+    editingId = null;
+    modal.showModal(); // Usando showModal() para <dialog>
+    document.getElementById('farmaciaNombre')?.focus();
+    log('➕ Modal de agregar farmacia abierto', 'info');
+}
 
-        farmacias[idx] = { ...farmacias[idx], ...data };
-        localService.save(farmacias);
-        uiService.render(farmacias);
-        uiService.updateStats();
-    };
+// ✏️ Editar farmacia
+function editFarmacia(id) {
+    const farmacia = farmacias.find(f => f.id === id);
+    if (!farmacia) {
+        log(`❌ Farmacia con ID ${id} no encontrada`, 'error');
+        return;
+    }
+    const modalTitle = document.getElementById('modalTitle');
+    const nombreInput = document.getElementById('farmaciaNombre');
+    const telefonoInput = document.getElementById('farmaciaTelefono');
+    const descripcionInput = document.getElementById('farmaciaDescripcion');
+    const modal = document.getElementById('farmaciaModal');
+    if (!modalTitle || !nombreInput || !telefonoInput || !descripcionInput || !modal) return;
 
-    window.editFarmacia = id => {
-        const f = farmacias.find(x => x.id === id);
-        if (!f) {
-            log(`❌ Farmacia con ID ${id} no encontrada`, 'error');
-            return;
-        }
-        openModal('edit', f);
-    };
+    modalTitle.textContent = 'Editar Farmacia';
+    nombreInput.value = farmacia.nombre || '';
+    telefonoInput.value = farmacia.telefono || '';
+    descripcionInput.value = farmacia.descripcion || '';
+    editingId = id;
+    modal.showModal();
+    nombreInput.focus();
+    log(`✏️ Editando farmacia: ${farmacia.nombre}`, 'info');
+}
 
-    const deleteFarmacia = async (id, nombre) => {
-        if (!confirm(`¿Estás seguro de que deseas eliminar "${nombre}"?\nEsta acción no se puede deshacer.`)) return;
-
-        const idx = farmacias.findIndex(f => f.id === id);
-        if (idx === -1) return;
-
-        if (firebaseReady && !id.startsWith('local_')) {
-            try {
-                await firebaseService.delete(id);
-                log('✅ Farmacia eliminada de Firebase', 'success');
-            } catch (err) {
-                log(`📱 Error Firebase, eliminando localmente: ${err.message}`, 'warning');
-            }
-        }
-
-        farmacias.splice(idx, 1);
-        localService.save(farmacias);
-        uiService.render(farmacias);
-        uiService.updateStats();
-        log(`🗑️ Farmacia "${nombre}" eliminada`, 'info');
-    };
-
-    window.deleteFarmacia = deleteFarmacia;
-
-    // ---------- Exportar a Excel ----------
-    window.exportData = () => {
-        try {
-            const rows = farmacias.map((f, i) => ({
-                'N°': i + 1,
-                'NOMBRE': f.nombre,
-                'TELEFONO': f.telefono || '',
-                'DESCRIPCION': f.descripcion || '',
-                'FECHA_CREACION': f.fechaCreacion ? new Date(f.fechaCreacion).toLocaleString('es-CO') : '',
-                'ULTIMA_ACTUALIZACION': f.fechaActualizacion ? new Date(f.fechaActualizacion).toLocaleString('es-CO') : ''
-            }));
-            const ws = XLSX.utils.json_to_sheet(rows);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Farmacias_Zona1561');
-            const fecha = new Date().toISOString().slice(0, 10);
-            XLSX.writeFile(wb, `Farmacias_Zona1561_${fecha}.xlsx`);
-            log(`📊 Excel exportado: ${farmacias.length} farmacias`, 'success');
-        } catch (err) {
-            handleError('Exportando a Excel', err);
-            alert('Error al exportar datos');
-        }
-    };
-
-    // ---------- Utilidades UI ----------
-    const closeModal = () => {
-        elements.modal.style.display = 'none';
+// ❌ Cerrar modal
+function closeModal() {
+    const modal = document.getElementById('farmaciaModal');
+    if (modal) {
+        modal.close(); // Usando close() para <dialog>
         editingId = null;
         log('❌ Modal cerrado', 'info');
-    };
-    window.closeModal = closeModal;
+    }
+}
 
-    // ---------- Limpieza de log ----------
-    window.clearLog = () => {
-        elements.logContainer.innerHTML = '';
-        log('🧹 Registro limpiado', 'info');
+// 📝 Manejar envío del formulario
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    const nombre = document.getElementById('farmaciaNombre')?.value.trim() || '';
+    const telefono = document.getElementById('farmaciaTelefono')?.value.trim() || '';
+    const descripcion = document.getElementById('farmaciaDescripcion')?.value.trim() || '';
+    if (!nombre) {
+        alert('El nombre de la farmacia es obligatorio');
+        return;
+    }
+    const farmaciaData = {
+        nombre,
+        telefono,
+        descripcion,
+        fechaActualizacion: new Date().toISOString()
     };
-
-    // ---------- Debug ----------
-    window.farmaciaDebug = {
-        status: () => ({
-            firebaseReady,
-            totalFarmacias: farmacias.length,
-            editingId,
-            lastUpdate: new Date().toISOString()
-        }),
-        getFarmacias: () => farmacias,
-        clearAll: () => {
-            if (confirm('¿Eliminar TODAS las farmacias? Esta acción no se puede deshacer.')) {
-                farmacias = [];
-                localService.clear();
-                uiService.render(farmacias);
-                uiService.updateStats();
-                log('🧹 Todas las farmacias eliminadas', 'warning');
-            }
+    try {
+        if (editingId) {
+            await updateFarmacia(editingId, farmaciaData);
+        } else {
+            farmaciaData.fechaCreacion = new Date().toISOString();
+            await addFarmacia(farmaciaData);
         }
-    };
+        closeModal();
+    } catch (error) {
+        log(`❌ Error guardando farmacia: ${error.message}`, 'error');
+        alert(`Error: ${error.message}`);
+    }
+}
 
-    // ---------- Arranque ----------
-    init();
-    log('📱 Sistema de Farmacias cargado correctamente', 'success');
-})();
+// ➕ Agregar farmacia
+async function addFarmacia(farmaciaData) {
+    if (firebaseReady) {
+        try {
+            const collection = window.firebaseCollection(window.firebaseDB, COLLECTION_NAME);
+            const docRef = await window.firebaseAddDoc(collection, farmaciaData);
+            farmaciaData.id = docRef.id;
+            farmacias.push(farmaciaData);
+            log(`✅ Farmacia "${farmaciaData.nombre}" agregada a Firebase`, 'success');
+        } catch (error) {
+            // Fallback local
+            farmaciaData.id = 'local_' + Date.now();
+            farmacias.push(farmaciaData);
+            log(`📱 Farmacia guardada localmente: ${error.message}`, 'warning');
+        }
+    } else {
+        // Solo local
+        farmaciaData.id = 'local_' + Date.now();
+        farmacias.push(farmaciaData);
+        log(`📱 Farmacia guardada localmente (sin Firebase)`, 'warning');
+    }
+    saveToLocalStorage();
+    renderFarmacias();
+    updateStats();
+}
+
+// ✏️ Actualizar farmacia
+async function updateFarmacia(id, farmaciaData) {
+    const index = farmacias.findIndex(f => f.id === id);
+    if (index === -1) return;
+
+    if (firebaseReady && !id.startsWith('local_')) {
+        try {
+            const docRef = window.firebaseDoc(window.firebaseDB, COLLECTION_NAME, id);
+            await window.firebaseUpdateDoc(docRef, farmaciaData);
+            log(`✅ Farmacia actualizada en Firebase`, 'success');
+        } catch (error) {
+            log(`📱 Error Firebase, actualizando localmente: ${error.message}`, 'warning');
+        }
+    }
+    farmacias[index] = { ...farmacias[index], ...farmaciaData };
+    saveToLocalStorage();
+    renderFarmacias();
+    updateStats();
+}
+
+// 🗑️ Eliminar farmacia
+async function deleteFarmacia(id, nombre) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar "${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    const index = farmacias.findIndex(f => f.id === id);
+    if (index === -1) return;
+
+    if (firebaseReady && !id.startsWith('local_')) {
+        try {
+            const docRef = window.firebaseDoc(window.firebaseDB, COLLECTION_NAME, id);
+            await window.firebaseDeleteDoc(docRef);
+            log(`✅ Farmacia eliminada de Firebase`, 'success');
+        } catch (error) {
+            log(`📱 Error Firebase, eliminando localmente: ${error.message}`, 'warning');
+        }
+    }
+    farmacias.splice(index, 1);
+    saveToLocalStorage();
+    renderFarmacias();
+    updateStats();
+    log(`🗑️ Farmacia "${nombre}" eliminada`, 'info');
+}
+
+// 📊 Actualizar estadísticas
+function updateStats() {
+    const total = farmacias.length;
+    const conTelefono = farmacias.filter(f => f.telefono).length;
+    const ahora = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('totalFarmacias')?.textContent = total;
+    document.getElementById('conTelefono')?.textContent = conTelefono;
+    document.getElementById('ultimaActualizacion')?.textContent = ahora;
+}
+
+// 📤 Exportar datos a Excel
+function exportData() {
+    try {
+        const dataToExport = farmacias.map((farmacia, index) => ({
+            'N°': index + 1,
+            'NOMBRE': farmacia.nombre,
+            'TELEFONO': farmacia.telefono || '',
+            'DESCRIPCION': farmacia.descripcion || '',
+            'FECHA_CREACION': farmacia.fechaCreacion ? new Date(farmacia.fechaCreacion).toLocaleString('es-CO') : '',
+            'ULTIMA_ACTUALIZACION': farmacia.fechaActualizacion ? new Date(farmacia.fechaActualizacion).toLocaleString('es-CO') : ''
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Farmacias_Zona1561');
+        const fecha = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(workbook, `Farmacias_Zona1561_${fecha}.xlsx`);
+        log(`📊 Excel exportado: ${farmacias.length} farmacias`, 'success');
+    } catch (error) {
+        log(`❌ Error exportando: ${error.message}`, 'error');
+        alert('Error al exportar datos');
+    }
+}
+
+// ✨ Animación de filas
+function animateTableRows() {
+    const rows = document.querySelectorAll('.farmacia-row');
+    rows.forEach((row, index) => {
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            row.style.transition = 'all 0.3s ease';
+            row.style.opacity = '1';
+            row.style.transform = 'translateY(0)';
+        }, index * 50);
+    });
+}
+
+// 📊 Actualizar estado de conexión
+function updateConnectionStatus(status, title, message) {
+    const statusCard = document.querySelector('.status-card');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusMessage = document.getElementById('statusMessage');
+    if (!statusCard || !statusIcon || !statusTitle || !statusMessage) return;
+
+    statusCard.className = 'status-card'; // Reset
+    switch (status) {
+        case 'connecting':
+            statusIcon.className = 'fas fa-spinner fa-spin';
+            break;
+        case 'connected':
+            statusCard.classList.add('connected');
+            statusIcon.className = 'fas fa-check-circle success';
+            break;
+        case 'error':
+            statusCard.classList.add('error');
+            statusIcon.className = 'fas fa-exclamation-triangle error';
+            break;
+    }
+    statusTitle.textContent = title;
+    statusMessage.textContent = message;
+}
+
+// 📝 Sistema de logging
+function log(message, type = 'info') {
+    const logContainer = document.getElementById('logContainer');
+    if (!logContainer) return;
+
+    const timestamp = new Date().toLocaleTimeString('es-CO');
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry ${type}`;
+    const icons = {
+        'info': 'ℹ️',
+        'success': '✅',
+        'warning': '⚠️',
+        'error': '❌'
+    };
+    logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${icons[type]} ${message}`;
+    logContainer.appendChild(logEntry);
+    logContainer.scrollTop = logContainer.scrollHeight;
+    // Console log
+    console.log(`[Farmacias] ${message}`);
+}
+
+// 🧹 Limpiar log
+function clearLog() {
+    const logContainer = document.getElementById('logContainer');
+    if (logContainer) {
+        logContainer.innerHTML = '';
+        log('🧹 Registro limpiado', 'info');
+    }
+}
+
+// ⏱️ Debounce utility (mejorada para claridad)
+function debounce(func, wait) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
+}
+
+// 🎯 Funciones globales (encapsuladas en un objeto para mejor práctica)
+window.farmaciaApp = {
+    showAddModal,
+    editFarmacia,
+    deleteFarmacia,
+    closeModal,
+    loadFarmacias,
+    exportData,
+    clearLog
+};
+
+// 🔧 Debug utilities
+window.farmaciaDebug = {
+    status: () => ({
+        firebaseReady,
+        totalFarmacias: farmacias.length,
+        editingId,
+        lastUpdate: new Date().toISOString()
+    }),
+    getFarmacias: () => farmacias,
+    clearAll: () => {
+        if (confirm('¿Eliminar TODAS las farmacias? Esta acción no se puede deshacer.')) {
+            farmacias = [];
+            localStorage.removeItem('farmacias_zona1561_local');
+            renderFarmacias();
+            updateStats();
+            log('🧹 Todas las farmacias eliminadas', 'warning');
+        }
+    }
+};
+
+// 🚀 Inicialización final
+log('📱 Sistema de Farmacias cargado correctamente', 'success');
