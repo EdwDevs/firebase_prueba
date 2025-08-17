@@ -1,8 +1,8 @@
-/**
- * 🏢 SISTEMA FARMACIAS ZONA 1561 - ESTILO PROFESIONAL
- * Diseño ejecutivo, elegante y responsive
- * @version: Professional 1.0
- * @responsive: Mobile First Design
+/** 
+ * 🏢 SISTEMA FARMACIAS ZONA 1561 - ESTILO PROFESIONAL 
+ * Diseño ejecutivo, elegante y responsive 
+ * @version: Professional 1.1 // Refinado para eficiencia
+ * @responsive: Mobile First Design 
  */
 
 /* 🎨 Variables de Diseño Profesional */
@@ -12,9 +12,8 @@
     --secondary-blue: #3b82f6;
     --accent-blue: #60a5fa;
     --success-green: #059669;
-    --warning-amber: #d97706;
+    --warning-amber: #d97706; /* Corregido para consistencia */
     --danger-red: #dc2626;
-    
     /* Grises Profesionales */
     --gray-50: #f8fafc;
     --gray-100: #f1f5f9;
@@ -26,11 +25,9 @@
     --gray-700: #334155;
     --gray-800: #1e293b;
     --gray-900: #0f172a;
-    
     /* Tipografía */
     --font-primary: 'Inter', 'Segoe UI', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-    
     /* Espaciado */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
@@ -38,18 +35,15 @@
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
     --spacing-2xl: 3rem;
-    
     /* Bordes y Sombras */
     --radius-sm: 0.375rem;
     --radius-md: 0.5rem;
     --radius-lg: 0.75rem;
     --radius-xl: 1rem;
-    
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    
     /* Transiciones */
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -66,8 +60,7 @@
     box-sizing: border-box;
 }
 
-*::before,
-*::after {
+*::before, *::after {
     box-sizing: border-box;
 }
 
@@ -79,7 +72,7 @@ html {
 
 body {
     font-family: var(--font-primary);
-    font-size: 0.875rem;
+    font-size: clamp(0.875rem, 2vw, 1rem); /* Usando clamp para responsive */
     line-height: 1.6;
     color: var(--gray-700);
     background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
@@ -93,12 +86,9 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     padding: var(--spacing-md);
-    
-    /* Mobile First */
     @media (min-width: 640px) {
         padding: var(--spacing-lg);
     }
-    
     @media (min-width: 1024px) {
         padding: var(--spacing-xl);
     }
@@ -108,7 +98,7 @@ body {
 .header {
     background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
     color: white;
-    padding: var(--spacing-xl) var(--spacing-lg);
+    padding: clamp(var(--spacing-lg), 3vw, var(--spacing-xl));
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-lg);
     margin-bottom: var(--spacing-xl);
@@ -128,7 +118,7 @@ body {
 }
 
 .header h1 {
-    font-size: 1.75rem;
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
     font-weight: 800;
     margin-bottom: var(--spacing-sm);
     display: flex;
@@ -136,26 +126,14 @@ body {
     gap: var(--spacing-md);
     position: relative;
     z-index: 2;
-    
-    @media (min-width: 640px) {
-        font-size: 2.25rem;
-    }
-    
-    @media (min-width: 1024px) {
-        font-size: 2.75rem;
-    }
 }
 
 .header p {
-    font-size: 1rem;
+    font-size: clamp(1rem, 2vw, 1.125rem);
     opacity: 0.9;
     font-weight: 300;
     position: relative;
     z-index: 2;
-    
-    @media (min-width: 640px) {
-        font-size: 1.125rem;
-    }
 }
 
 /* 📊 Connection Status - Responsive */
@@ -165,7 +143,7 @@ body {
 
 .status-card {
     background: white;
-    padding: var(--spacing-lg);
+    padding: clamp(var(--spacing-md), 2vw, var(--spacing-xl));
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     border: 1px solid var(--gray-200);
@@ -173,11 +151,6 @@ body {
     align-items: center;
     gap: var(--spacing-md);
     transition: all var(--transition-normal);
-    
-    @media (min-width: 640px) {
-        padding: var(--spacing-xl);
-        gap: var(--spacing-lg);
-    }
 }
 
 .status-card.connected {
@@ -191,12 +164,8 @@ body {
 }
 
 #statusIcon {
-    font-size: 1.5rem;
+    font-size: clamp(1.5rem, 3vw, 2rem);
     flex-shrink: 0;
-    
-    @media (min-width: 640px) {
-        font-size: 2rem;
-    }
 }
 
 #statusIcon.success {
@@ -208,40 +177,23 @@ body {
 }
 
 #statusTitle {
-    font-size: 1.125rem;
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
     font-weight: 600;
     color: var(--gray-800);
     margin-bottom: var(--spacing-xs);
-    
-    @media (min-width: 640px) {
-        font-size: 1.25rem;
-    }
 }
 
 #statusMessage {
     color: var(--gray-600);
-    font-size: 0.875rem;
-    
-    @media (min-width: 640px) {
-        font-size: 1rem;
-    }
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
 }
 
 /* 📊 Stats Container - Grid Responsivo */
 .stats-container {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Mejorado para flexibilidad */
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-xl);
-    
-    @media (min-width: 640px) {
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--spacing-lg);
-    }
-    
-    @media (min-width: 1024px) {
-        grid-template-columns: repeat(3, 1fr);
-    }
 }
 
 .stat-card {
@@ -280,13 +232,9 @@ body {
 }
 
 .stat-card i {
-    font-size: 1.75rem;
+    font-size: clamp(1.75rem, 3vw, 2rem);
     color: var(--secondary-blue);
     flex-shrink: 0;
-    
-    @media (min-width: 640px) {
-        font-size: 2rem;
-    }
 }
 
 .stat-info {
@@ -296,26 +244,18 @@ body {
 }
 
 .stat-number {
-    font-size: 1.5rem;
+    font-size: clamp(1.5rem, 3vw, 1.75rem);
     font-weight: 700;
     color: var(--gray-800);
     line-height: 1.2;
-    
-    @media (min-width: 640px) {
-        font-size: 1.75rem;
-    }
 }
 
 .stat-label {
-    font-size: 0.75rem;
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
     color: var(--gray-500);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 500;
-    
-    @media (min-width: 640px) {
-        font-size: 0.875rem;
-    }
 }
 
 /* 🎛️ Management Panel */
@@ -332,35 +272,31 @@ body {
     padding: var(--spacing-lg);
     border-bottom: 1px solid var(--gray-200);
     background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
-    
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
     @media (min-width: 640px) {
         padding: var(--spacing-xl);
-        display: flex;
+        flex-direction: row;
         justify-content: space-between;
         align-items: center;
+        gap: 0;
     }
 }
 
 .panel-header h2 {
-    font-size: 1.25rem;
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
     font-weight: 700;
     color: var(--gray-800);
-    margin-bottom: var(--spacing-md);
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
-    
-    @media (min-width: 640px) {
-        font-size: 1.5rem;
-        margin-bottom: 0;
-    }
 }
 
 .panel-actions {
     display: flex;
     gap: var(--spacing-sm);
     flex-wrap: wrap;
-    
     @media (min-width: 640px) {
         gap: var(--spacing-md);
         flex-wrap: nowrap;
@@ -372,10 +308,12 @@ body {
     padding: var(--spacing-lg);
     border-bottom: 1px solid var(--gray-200);
     background: var(--gray-50);
-    
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
     @media (min-width: 640px) {
         padding: var(--spacing-xl);
-        display: flex;
+        flex-direction: row;
         gap: var(--spacing-lg);
         align-items: center;
     }
@@ -383,13 +321,8 @@ body {
 
 .search-container {
     position: relative;
-    margin-bottom: var(--spacing-md);
     flex: 1;
-    
-    @media (min-width: 640px) {
-        margin-bottom: 0;
-        min-width: 300px;
-    }
+    min-width: 0;
 }
 
 .search-container i {
@@ -406,13 +339,9 @@ body {
     padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 2.5rem;
     border: 1px solid var(--gray-300);
     border-radius: var(--radius-md);
-    font-size: 0.875rem;
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
     background: white;
     transition: all var(--transition-normal);
-    
-    @media (min-width: 640px) {
-        font-size: 1rem;
-    }
 }
 
 .search-container input:focus {
@@ -431,7 +360,7 @@ body {
     border: 1px solid var(--gray-300);
     border-radius: var(--radius-md);
     background: white;
-    font-size: 0.875rem;
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
     color: var(--gray-700);
     transition: all var(--transition-normal);
     min-width: 120px;
@@ -449,21 +378,16 @@ body {
     align-items: center;
     justify-content: center;
     gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: clamp(var(--spacing-sm), 1.5vw, var(--spacing-md)) clamp(var(--spacing-md), 2vw, var(--spacing-lg));
     border: none;
     border-radius: var(--radius-md);
-    font-size: 0.875rem;
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
     font-weight: 500;
     text-decoration: none;
     transition: all var(--transition-normal);
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    
-    @media (min-width: 640px) {
-        padding: var(--spacing-md) var(--spacing-lg);
-        font-size: 0.875rem;
-    }
 }
 
 .btn::before {
@@ -537,11 +461,7 @@ body {
 
 /* 📊 Tabla Responsiva Profesional */
 .farmacia-list {
-    padding: var(--spacing-lg);
-    
-    @media (min-width: 640px) {
-        padding: var(--spacing-xl);
-    }
+    padding: clamp(var(--spacing-md), 2vw, var(--spacing-xl));
 }
 
 .table-container {
@@ -549,8 +469,6 @@ body {
     border-radius: var(--radius-lg);
     border: 1px solid var(--gray-200);
     background: white;
-    
-    /* Scrollbar personalizado */
     scrollbar-width: thin;
     scrollbar-color: var(--gray-300) var(--gray-100);
 }
@@ -577,30 +495,21 @@ body {
 .farmacia-table th {
     background: linear-gradient(135deg, var(--gray-800), var(--gray-700));
     color: white;
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: clamp(var(--spacing-md), 2vw, var(--spacing-lg)) clamp(var(--spacing-lg), 3vw, var(--spacing-xl));
     text-align: left;
     font-weight: 600;
-    font-size: 0.75rem;
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     position: sticky;
     top: 0;
     z-index: 10;
-    
-    @media (min-width: 640px) {
-        font-size: 0.875rem;
-        padding: var(--spacing-lg) var(--spacing-xl);
-    }
 }
 
 .farmacia-table td {
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: clamp(var(--spacing-md), 2vw, var(--spacing-lg)) clamp(var(--spacing-lg), 3vw, var(--spacing-xl));
     border-bottom: 1px solid var(--gray-200);
     vertical-align: top;
-    
-    @media (min-width: 640px) {
-        padding: var(--spacing-lg) var(--spacing-xl);
-    }
 }
 
 .farmacia-row {
@@ -622,10 +531,6 @@ body {
     gap: var(--spacing-sm);
     font-weight: 600;
     color: var(--gray-800);
-    
-    @media (min-width: 640px) {
-        gap: var(--spacing-md);
-    }
 }
 
 .farmacia-name i {
@@ -638,7 +543,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
-    
     @media (min-width: 640px) {
         flex-direction: row;
         gap: var(--spacing-sm);
@@ -649,20 +553,15 @@ body {
 .btn-phone {
     background: linear-gradient(135deg, var(--success-green), #10b981);
     color: white;
-    padding: var(--spacing-xs) var(--spacing-sm);
+    padding: clamp(var(--spacing-xs), 1vw, var(--spacing-sm)) clamp(var(--spacing-sm), 1.5vw, var(--spacing-md));
     border-radius: var(--radius-sm);
     text-decoration: none;
-    font-size: 0.75rem;
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-xs);
     transition: all var(--transition-normal);
     white-space: nowrap;
-    
-    @media (min-width: 640px) {
-        font-size: 0.875rem;
-        padding: var(--spacing-sm) var(--spacing-md);
-    }
 }
 
 .btn-phone:hover {
@@ -679,15 +578,10 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: clamp(28px, 3vw, 32px);
+    height: clamp(28px, 3vw, 32px);
     transition: all var(--transition-normal);
     flex-shrink: 0;
-    
-    @media (min-width: 640px) {
-        width: 32px;
-        height: 32px;
-    }
 }
 
 .btn-whatsapp:hover {
@@ -707,8 +601,6 @@ body {
     line-height: 1.5;
     color: var(--gray-600);
     font-size: 0.875rem;
-    
-    /* Scrollbar personalizado */
     scrollbar-width: thin;
     scrollbar-color: var(--gray-300) transparent;
 }
@@ -727,7 +619,6 @@ body {
     display: flex;
     gap: var(--spacing-xs);
     justify-content: center;
-    
     @media (min-width: 640px) {
         gap: var(--spacing-sm);
     }
@@ -741,24 +632,16 @@ body {
 }
 
 .empty-state i {
-    font-size: 3rem;
+    font-size: clamp(3rem, 5vw, 4rem);
     margin-bottom: var(--spacing-lg);
     color: var(--gray-300);
-    
-    @media (min-width: 640px) {
-        font-size: 4rem;
-    }
 }
 
 .empty-state h3 {
-    font-size: 1.125rem;
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
     font-weight: 600;
     color: var(--gray-700);
     margin-bottom: var(--spacing-sm);
-    
-    @media (min-width: 640px) {
-        font-size: 1.25rem;
-    }
 }
 
 /* 🎭 Modal Profesional */
@@ -773,7 +656,8 @@ body {
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     padding: var(--spacing-md);
-    
+    align-items: center;
+    justify-content: center; /* Centrado con flex */
     @media (min-width: 640px) {
         padding: var(--spacing-xl);
     }
@@ -781,56 +665,34 @@ body {
 
 .modal-content {
     background: white;
-    margin: auto;
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-xl);
-    max-width: 500px;
+    max-width: clamp(500px, 80vw, 700px);
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    position: relative;
-    top: 50%;
-    transform: translateY(-50%);
     animation: modalSlideIn var(--transition-normal) ease-out;
-    
-    @media (min-width: 640px) {
-        max-width: 600px;
-    }
 }
 
 @keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-50%) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(-50%) scale(1);
-    }
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 .modal-header {
-    padding: var(--spacing-lg);
+    padding: clamp(var(--spacing-md), 2vw, var(--spacing-xl));
     border-bottom: 1px solid var(--gray-200);
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    
-    @media (min-width: 640px) {
-        padding: var(--spacing-xl);
-    }
 }
 
 .modal-header h3 {
-    font-size: 1.125rem;
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
     font-weight: 700;
     color: var(--gray-800);
-    
-    @media (min-width: 640px) {
-        font-size: 1.25rem;
-    }
 }
 
 .close {
@@ -850,11 +712,7 @@ body {
 
 /* 📝 Formularios */
 #farmaciaForm {
-    padding: var(--spacing-lg);
-    
-    @media (min-width: 640px) {
-        padding: var(--spacing-xl);
-    }
+    padding: clamp(var(--spacing-md), 2vw, var(--spacing-xl));
 }
 
 .form-group {
@@ -874,17 +732,12 @@ body {
 .form-group input,
 .form-group textarea {
     width: 100%;
-    padding: var(--spacing-md);
+    padding: clamp(var(--spacing-md), 1.5vw, var(--spacing-lg));
     border: 1px solid var(--gray-300);
     border-radius: var(--radius-md);
-    font-size: 0.875rem;
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
     transition: all var(--transition-normal);
     background: white;
-    
-    @media (min-width: 640px) {
-        font-size: 1rem;
-        padding: var(--spacing-lg);
-    }
 }
 
 .form-group input:focus,
@@ -907,7 +760,6 @@ body {
     border-top: 1px solid var(--gray-200);
     justify-content: flex-end;
     flex-wrap: wrap;
-    
     @media (max-width: 640px) {
         flex-direction: column-reverse;
     }
@@ -923,9 +775,9 @@ body {
 }
 
 .activity-section h3 {
-    padding: var(--spacing-lg);
+    padding: clamp(var(--spacing-md), 2vw, var(--spacing-xl));
     margin: 0;
-    font-size: 1.125rem;
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
     font-weight: 700;
     color: var(--gray-800);
     display: flex;
@@ -933,27 +785,17 @@ body {
     gap: var(--spacing-md);
     background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
     border-bottom: 1px solid var(--gray-200);
-    
-    @media (min-width: 640px) {
-        padding: var(--spacing-xl);
-        font-size: 1.25rem;
-    }
 }
 
 .log-container {
     background: var(--gray-900);
     color: var(--gray-100);
-    padding: var(--spacing-lg);
+    padding: clamp(var(--spacing-md), 2vw, var(--spacing-xl));
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
     line-height: 1.5;
     max-height: 300px;
     overflow-y: auto;
-    
-    @media (min-width: 640px) {
-        font-size: 0.875rem;
-        padding: var(--spacing-xl);
-    }
 }
 
 .log-entry {
@@ -961,21 +803,10 @@ body {
     word-wrap: break-word;
 }
 
-.log-entry.success {
-    color: #10b981;
-}
-
-.log-entry.error {
-    color: #ef4444;
-}
-
-.log-entry.warning {
-    color: #f59e0b;
-}
-
-.log-entry.info {
-    color: #3b82f6;
-}
+.log-entry.success { color: #10b981; }
+.log-entry.error { color: #ef4444; }
+.log-entry.warning { color: #f59e0b; }
+.log-entry.info { color: #3b82f6; }
 
 .timestamp {
     color: var(--gray-400);
@@ -992,14 +823,8 @@ mark {
 
 /* ✨ Animaciones */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .farmacia-row {
@@ -1013,26 +838,22 @@ mark {
     .farmacia-table td:nth-child(4) {
         display: none; /* Ocultar acciones en móvil muy pequeño */
     }
-    
     /* Simplificar botones en móvil */
     .panel-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: var(--spacing-sm);
     }
-    
     .panel-actions .btn {
         font-size: 0.75rem;
         padding: var(--spacing-sm);
     }
-    
     /* Mejorar legibilidad en móvil */
     .farmacia-name {
         flex-direction: column;
         align-items: flex-start;
         gap: var(--spacing-xs);
     }
-    
     .descripcion-container {
         max-height: 60px;
     }
@@ -1043,17 +864,11 @@ mark {
     .container {
         padding: var(--spacing-lg);
     }
-    
-    .stats-container {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
     .panel-header {
         flex-direction: column;
         gap: var(--spacing-lg);
         align-items: stretch;
     }
-    
     .search-section {
         flex-direction: column;
         gap: var(--spacing-md);
@@ -1066,15 +881,9 @@ mark {
     .farmacia-table td {
         padding: var(--spacing-lg) var(--spacing-xl);
     }
-    
     .action-buttons {
         gap: var(--spacing-md);
     }
-    
-    .modal-content {
-        max-width: 700px;
-    }
-    
     .btn:hover {
         transform: translateY(-2px);
     }
@@ -1082,50 +891,20 @@ mark {
 
 /* 🎨 Print Styles */
 @media print {
-    .header,
-    .connection-status,
-    .panel-actions,
-    .search-section,
-    .action-buttons,
-    .activity-section {
+    .header, .connection-status, .panel-actions, .search-section, .action-buttons, .activity-section {
         display: none !important;
     }
-    
     .container {
         padding: 0;
     }
-    
     .management-panel {
         box-shadow: none;
         border: 1px solid #000;
     }
-    
     .farmacia-table th {
         background: #f0f0f0 !important;
         color: #000 !important;
     }
-}
-
-/* 🌟 Loading States */
-.loading {
-    position: relative;
-    overflow: hidden;
-}
-
-.loading::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
 }
 
 /* 🎯 Accessibility */
@@ -1158,14 +937,6 @@ select:focus {
     border: 0;
 }
 
-.text-center {
-    text-align: center;
-}
-
-.font-medium {
-    font-weight: 500;
-}
-
-.font-bold {
-    font-weight: 700;
-}
+.text-center { text-align: center; }
+.font-medium { font-weight: 500; }
+.font-bold { font-weight: 700; }
