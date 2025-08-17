@@ -516,3 +516,45 @@ window.farmaciaDebug = {
 
 // 🚀 Inicialización final
 log('📱 Sistema de Farmacias cargado correctamente', 'success');
+// En renderFarmacias(), agrega logs para tracking
+function renderFarmacias(farmaciasList = farmacias) {
+    const tableBody = document.getElementById('farmaciaTableBody');
+    const emptyState = document.getElementById('emptyState');
+    const tableContainer = document.querySelector('.table-container');
+    if (!tableBody || !emptyState || !tableContainer) {
+        console.error('❌ Elementos DOM no encontrados para render'); // Nuevo log de error
+        return;
+    }
+    tableBody.innerHTML = '';
+    console.log('Iniciando render, total a renderizar:', farmaciasList.length); // Nuevo log
+    if (farmaciasList.length === 0) {
+        tableContainer.style.display = 'none';
+        emptyState.style.display = 'block';
+        console.log('Mostrando empty state'); // Nuevo
+        return;
+    }
+    tableContainer.style.display = 'block';
+    emptyState.style.display = 'none';
+    farmaciasList.forEach((farmacia, index) => {
+        try { // Nuevo try-catch para capturar errores en creación de fila
+            const row = createFarmaciaRow(farmacia, index);
+            tableBody.appendChild(row);
+            console.log(`Fila ${index + 1} agregada para: ${farmacia.nombre}`); // Nuevo log por fila
+        } catch (e) {
+            console.error(`❌ Error creando fila ${index}:`, e, farmacia); // Captura errores
+        }
+    });
+    console.log('Render completado, filas en tabla:', tableBody.children.length); // Nuevo
+    animateTableRows();
+}
+
+// En createFarmaciaRow(), agrega log para datos
+function createFarmaciaRow(farmacia, index) {
+    console.log(`Creando fila para farmacia:`, farmacia); // Nuevo: verifica datos entrantes
+    // Resto igual...
+}
+
+// En loadFarmacias(), después del map:
+farmacias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+console.log('Datos cargados:', farmacias); // Nuevo: muestra los 13 objetos en consola
+log(`✅ ${farmacias.length} farmacias cargadas`, 'success');
