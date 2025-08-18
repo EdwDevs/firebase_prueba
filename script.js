@@ -1,7 +1,7 @@
 /**
  * 🏥 SISTEMA DE GESTIÓN DE FARMACIAS ZONA 1561
  * Basado en Firebase que YA FUNCIONA
- * @version: 3.0.0
+ * @version: 3.1.0 - CORREGIDO
  */
 
 // 🎯 Variables globales
@@ -14,13 +14,12 @@ const COLLECTION_NAME = 'farmacias_zona1561';
 document.addEventListener('DOMContentLoaded', () => {
     log('🚀 Iniciando Sistema de Farmacias...', 'info');
     updateConnectionStatus('connecting', 'Conectando...', 'Inicializando sistema...');
-  
     setupEventListeners();
-  
+    
     // Escuchar Firebase
     window.addEventListener('firebaseReady', handleFirebaseReady);
     window.addEventListener('firebaseError', handleFirebaseError);
-  
+    
     // Timeout de seguridad
     setTimeout(checkConnectionTimeout, 10000);
 });
@@ -30,7 +29,7 @@ function handleFirebaseReady() {
     firebaseReady = true;
     log('✅ Firebase conectado - Sistema listo', 'success');
     updateConnectionStatus('connected', '✅ Sistema Operativo', 'Conectado a Firebase zona1561-4de30');
-  
+    
     // Cargar farmacias existentes
     loadFarmacias();
 }
@@ -58,19 +57,19 @@ function setupEventListeners() {
     if (searchInput) {
         searchInput.addEventListener('input', debounce(filterFarmacias, 300));
     }
-  
+    
     // Filtros
     const filterTelefono = document.getElementById('filterTelefono');
     if (filterTelefono) {
         filterTelefono.addEventListener('change', filterFarmacias);
     }
-  
+    
     // Formulario
     const form = document.getElementById('farmaciaForm');
     if (form) {
         form.addEventListener('submit', handleFormSubmit);
     }
-  
+    
     // Modal - cerrar al hacer clic fuera
     const modal = document.getElementById('farmaciaModal');
     if (modal) {
@@ -78,7 +77,7 @@ function setupEventListeners() {
             if (e.target === modal) closeModal();
         });
     }
-  
+    
     // Teclas globales
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeModal();
@@ -91,14 +90,14 @@ async function loadFarmacias() {
         log('⚠️ Firebase no está listo', 'warning');
         return;
     }
-
+    
     try {
         log('📊 Cargando farmacias desde Firebase...', 'info');
-      
+        
         const farmaciaCollection = window.firebaseCollection(window.firebaseDB, COLLECTION_NAME);
         const q = window.firebaseQuery(farmaciaCollection, window.firebaseOrderBy('nombre'));
         const snapshot = await window.firebaseGetDocs(q);
-      
+        
         farmacias = [];
         snapshot.forEach((doc) => {
             farmacias.push({
@@ -106,11 +105,11 @@ async function loadFarmacias() {
                 ...doc.data()
             });
         });
-      
+        
         log(`✅ ${farmacias.length} farmacias cargadas`, 'success');
         renderFarmacias();
         updateStats();
-      
+        
     } catch (error) {
         log(`❌ Error cargando farmacias: ${error.message}`, 'error');
         loadLocalFarmacias();
@@ -130,7 +129,6 @@ function loadLocalFarmacias() {
     } else {
         farmacias = [];
     }
-  
     renderFarmacias();
     updateStats();
 }
@@ -148,34 +146,34 @@ function saveToLocalStorage() {
 function renderFarmacias(farmaciasList = farmacias) {
     const tableBody = document.getElementById('farmaciaTableBody');
     const emptyState = document.getElementById('emptyState');
-  
+    
     if (!tableBody) return;
-  
+    
     tableBody.innerHTML = '';
-  
+    
     if (farmaciasList.length === 0) {
         document.querySelector('.table-container').style.display = 'none';
         emptyState.style.display = 'block';
         return;
     }
-  
+    
     document.querySelector('.table-container').style.display = 'block';
     emptyState.style.display = 'none';
-  
+    
     farmaciasList.forEach((farmacia, index) => {
         const row = createFarmaciaRow(farmacia, index);
         tableBody.appendChild(row);
     });
-  
+    
     // Animación de entrada
     animateTableRows();
 }
 
-// 🏗️ Crear fila de farmacia
+// 🏗️ Crear fila de farmacia - CORREGIDA
 function createFarmaciaRow(farmacia, index) {
     const row = document.createElement('tr');
     row.className = 'farmacia-row';
-  
+    
     const telefonoDisplay = farmacia.telefono ? 
         `<div class="telefono-container">
             <a href="tel:${farmacia.telefono}" class="btn-phone">
@@ -186,23 +184,24 @@ function createFarmaciaRow(farmacia, index) {
             </a>
         </div>` : 
         '<span class="no-phone">Sin teléfono</span>';
-  
+    
+    // ✅ CORREGIDO: Agregando data-label a cada celda
     row.innerHTML = `
-        <td>
+        <td data-label="Nombre">
             <div class="farmacia-name">
-                <i class="fas fa-store"></i>
-                <strong>${highlightSearch(farmacia.nombre)}</strong>
+                <i class="fas fa-clinic-medical"></i>
+                <span>${highlightSearch(farmacia.nombre)}</span>
             </div>
         </td>
-        <td>
+        <td data-label="Teléfono">
             ${telefonoDisplay}
         </td>
-        <td>
+        <td data-label="Descripción">
             <div class="descripcion-container">
                 ${highlightSearch(farmacia.descripcion || 'Sin descripción')}
             </div>
         </td>
-        <td>
+        <td data-label="Acciones">
             <div class="action-buttons">
                 <button onclick="editFarmacia('${farmacia.id}')" class="btn btn-edit" title="Editar">
                     <i class="fas fa-edit"></i>
@@ -213,7 +212,7 @@ function createFarmaciaRow(farmacia, index) {
             </div>
         </td>
     `;
-  
+    
     return row;
 }
 
@@ -221,7 +220,7 @@ function createFarmaciaRow(farmacia, index) {
 function highlightSearch(text) {
     const searchTerm = document.getElementById('searchInput').value.trim();
     if (!searchTerm || !text) return text || '';
-  
+    
     const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
     return text.replace(regex, '<mark>$1</mark>');
 }
@@ -235,22 +234,22 @@ function escapeRegex(string) {
 function filterFarmacias() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const phoneFilter = document.getElementById('filterTelefono').value;
-  
+    
     let filtered = farmacias.filter(farmacia => {
         // Filtro de búsqueda
         const matchSearch = !searchTerm || 
             farmacia.nombre.toLowerCase().includes(searchTerm) ||
             (farmacia.telefono && farmacia.telefono.toLowerCase().includes(searchTerm)) ||
             (farmacia.descripcion && farmacia.descripcion.toLowerCase().includes(searchTerm));
-      
+        
         // Filtro de teléfono
         const matchPhone = !phoneFilter ||
             (phoneFilter === 'con' && farmacia.telefono) ||
             (phoneFilter === 'sin' && !farmacia.telefono);
-      
+        
         return matchSearch && matchPhone;
     });
-  
+    
     renderFarmacias(filtered);
     log(`🔍 Filtros aplicados: ${filtered.length}/${farmacias.length} farmacias`, 'info');
 }
@@ -272,16 +271,16 @@ function editFarmacia(id) {
         log(`❌ Farmacia con ID ${id} no encontrada`, 'error');
         return;
     }
-  
+    
     document.getElementById('modalTitle').textContent = 'Editar Farmacia';
     document.getElementById('farmaciaNombre').value = farmacia.nombre || '';
     document.getElementById('farmaciaTelefono').value = farmacia.telefono || '';
     document.getElementById('farmaciaDescripcion').value = farmacia.descripcion || '';
-  
+    
     editingId = id;
     document.getElementById('farmaciaModal').style.display = 'block';
     document.getElementById('farmaciaNombre').focus();
-  
+    
     log(`✏️ Editando farmacia: ${farmacia.nombre}`, 'info');
 }
 
@@ -295,23 +294,23 @@ function closeModal() {
 // 📝 Manejar envío del formulario
 async function handleFormSubmit(e) {
     e.preventDefault();
-  
+    
     const nombre = document.getElementById('farmaciaNombre').value.trim();
     const telefono = document.getElementById('farmaciaTelefono').value.trim();
     const descripcion = document.getElementById('farmaciaDescripcion').value.trim();
-  
+    
     if (!nombre) {
         alert('El nombre de la farmacia es obligatorio');
         return;
     }
-  
+    
     const farmaciaData = {
         nombre,
         telefono,
         descripcion,
         fechaActualizacion: new Date().toISOString()
     };
-  
+    
     try {
         if (editingId) {
             await updateFarmacia(editingId, farmaciaData);
@@ -319,9 +318,9 @@ async function handleFormSubmit(e) {
             farmaciaData.fechaCreacion = new Date().toISOString();
             await addFarmacia(farmaciaData);
         }
-      
+        
         closeModal();
-      
+        
     } catch (error) {
         log(`❌ Error guardando farmacia: ${error.message}`, 'error');
         alert(`Error: ${error.message}`);
@@ -334,12 +333,12 @@ async function addFarmacia(farmaciaData) {
         try {
             const collection = window.firebaseCollection(window.firebaseDB, COLLECTION_NAME);
             const docRef = await window.firebaseAddDoc(collection, farmaciaData);
-          
+            
             farmaciaData.id = docRef.id;
             farmacias.push(farmaciaData);
-          
+            
             log(`✅ Farmacia "${farmaciaData.nombre}" agregada a Firebase`, 'success');
-          
+            
         } catch (error) {
             // Fallback local
             farmaciaData.id = 'local_' + Date.now();
@@ -352,7 +351,7 @@ async function addFarmacia(farmaciaData) {
         farmacias.push(farmaciaData);
         log(`📱 Farmacia guardada localmente (sin Firebase)`, 'warning');
     }
-  
+    
     saveToLocalStorage();
     renderFarmacias();
     updateStats();
@@ -362,19 +361,19 @@ async function addFarmacia(farmaciaData) {
 async function updateFarmacia(id, farmaciaData) {
     const index = farmacias.findIndex(f => f.id === id);
     if (index === -1) return;
-  
+    
     if (firebaseReady && !id.startsWith('local_')) {
         try {
             const docRef = window.firebaseDoc(window.firebaseDB, COLLECTION_NAME, id);
             await window.firebaseUpdateDoc(docRef, farmaciaData);
-          
+            
             log(`✅ Farmacia actualizada en Firebase`, 'success');
-          
+            
         } catch (error) {
             log(`📱 Error Firebase, actualizando localmente: ${error.message}`, 'warning');
         }
     }
-  
+    
     farmacias[index] = { ...farmacias[index], ...farmaciaData };
     saveToLocalStorage();
     renderFarmacias();
@@ -386,27 +385,27 @@ async function deleteFarmacia(id, nombre) {
     if (!confirm(`¿Estás seguro de que deseas eliminar "${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
         return;
     }
-  
+    
     const index = farmacias.findIndex(f => f.id === id);
     if (index === -1) return;
-  
+    
     if (firebaseReady && !id.startsWith('local_')) {
         try {
             const docRef = window.firebaseDoc(window.firebaseDB, COLLECTION_NAME, id);
             await window.firebaseDeleteDoc(docRef);
-          
+            
             log(`✅ Farmacia eliminada de Firebase`, 'success');
-          
+            
         } catch (error) {
             log(`📱 Error Firebase, eliminando localmente: ${error.message}`, 'warning');
         }
     }
-  
+    
     farmacias.splice(index, 1);
     saveToLocalStorage();
     renderFarmacias();
     updateStats();
-  
+    
     log(`🗑️ Farmacia "${nombre}" eliminada`, 'info');
 }
 
@@ -418,7 +417,7 @@ function updateStats() {
         hour: '2-digit', 
         minute: '2-digit' 
     });
-  
+    
     document.getElementById('totalFarmacias').textContent = total;
     document.getElementById('conTelefono').textContent = conTelefono;
     document.getElementById('ultimaActualizacion').textContent = ahora;
@@ -435,16 +434,16 @@ function exportData() {
             'FECHA_CREACION': farmacia.fechaCreacion ? new Date(farmacia.fechaCreacion).toLocaleString('es-CO') : '',
             'ULTIMA_ACTUALIZACION': farmacia.fechaActualizacion ? new Date(farmacia.fechaActualizacion).toLocaleString('es-CO') : ''
         }));
-      
+        
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Farmacias_Zona1561');
-      
+        
         const fecha = new Date().toISOString().slice(0, 10);
         XLSX.writeFile(workbook, `Farmacias_Zona1561_${fecha}.xlsx`);
-      
+        
         log(`📊 Excel exportado: ${farmacias.length} farmacias`, 'success');
-      
+        
     } catch (error) {
         log(`❌ Error exportando: ${error.message}`, 'error');
         alert('Error al exportar datos');
@@ -457,7 +456,7 @@ function animateTableRows() {
     rows.forEach((row, index) => {
         row.style.opacity = '0';
         row.style.transform = 'translateY(20px)';
-      
+        
         setTimeout(() => {
             row.style.transition = 'all 0.3s ease';
             row.style.opacity = '1';
@@ -472,11 +471,11 @@ function updateConnectionStatus(status, title, message) {
     const statusIcon = document.getElementById('statusIcon');
     const statusTitle = document.getElementById('statusTitle');
     const statusMessage = document.getElementById('statusMessage');
-  
+    
     if (!statusCard) return;
-  
+    
     statusCard.className = 'status-card';
-  
+    
     switch (status) {
         case 'connecting':
             statusIcon.className = 'fas fa-spinner fa-spin';
@@ -490,7 +489,7 @@ function updateConnectionStatus(status, title, message) {
             statusIcon.className = 'fas fa-exclamation-triangle error';
             break;
     }
-  
+    
     statusTitle.textContent = title;
     statusMessage.textContent = message;
 }
@@ -499,24 +498,22 @@ function updateConnectionStatus(status, title, message) {
 function log(message, type = 'info') {
     const logContainer = document.getElementById('logContainer');
     if (!logContainer) return;
-  
+    
     const timestamp = new Date().toLocaleTimeString('es-CO');
-  
     const logEntry = document.createElement('div');
     logEntry.className = `log-entry ${type}`;
-  
+    
     const icons = {
         'info': 'ℹ️',
         'success': '✅',
         'warning': '⚠️',
         'error': '❌'
     };
-  
+    
     logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${icons[type]} ${message}`;
-  
     logContainer.appendChild(logEntry);
     logContainer.scrollTop = logContainer.scrollHeight;
-  
+    
     // Console log
     console.log(`[Farmacias] ${message}`);
 }
@@ -543,6 +540,22 @@ function debounce(func, wait) {
     };
 }
 
+// 🔧 FUNCIÓN DE DEBUG PARA VERIFICAR TABLA
+function debugTable() {
+    const rows = document.querySelectorAll('.farmacia-row');
+    console.log(`📊 Filas en tabla: ${rows.length}`);
+    
+    rows.forEach((row, index) => {
+        const cells = row.querySelectorAll('td');
+        console.log(`Fila ${index + 1}: ${cells.length} celdas`);
+        cells.forEach((cell, cellIndex) => {
+            const label = cell.getAttribute('data-label');
+            const content = cell.textContent.trim().substring(0, 50);
+            console.log(`  Celda ${cellIndex + 1}: ${label} - ${content}...`);
+        });
+    });
+}
+
 // 🎯 Funciones globales
 window.showAddModal = showAddModal;
 window.editFarmacia = editFarmacia;
@@ -551,6 +564,7 @@ window.closeModal = closeModal;
 window.loadFarmacias = loadFarmacias;
 window.exportData = exportData;
 window.clearLog = clearLog;
+window.debugTable = debugTable;
 
 // 🔧 Debug utilities
 window.farmaciaDebug = {
@@ -569,6 +583,28 @@ window.farmaciaDebug = {
             updateStats();
             log('🧹 Todas las farmacias eliminadas', 'warning');
         }
+    },
+    testData: () => {
+        // Datos de prueba
+        const testFarmacias = [
+            {
+                id: 'test_1',
+                nombre: 'Farmacia San Rafael',
+                telefono: '3001234567',
+                descripcion: 'Farmacia de prueba con todos los servicios'
+            },
+            {
+                id: 'test_2', 
+                nombre: 'Drogas La Rebaja',
+                telefono: '',
+                descripcion: 'Sin teléfono registrado'
+            }
+        ];
+        
+        farmacias = [...farmacias, ...testFarmacias];
+        renderFarmacias();
+        updateStats();
+        log('🧪 Datos de prueba agregados', 'info');
     }
 };
 
