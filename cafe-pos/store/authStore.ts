@@ -6,8 +6,11 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  authError: string | null;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
+  setAuthError: (error: string | null) => void;
+  clearAuthError: () => void;
   logout: () => void;
   hasRole: (roles: UserRole[]) => boolean;
   isAdmin: () => boolean;
@@ -21,6 +24,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: true,
+      authError: null,
       
       setUser: (user) => set({ 
         user, 
@@ -29,6 +33,10 @@ export const useAuthStore = create<AuthState>()(
       }),
       
       setLoading: (loading) => set({ isLoading: loading }),
+
+      setAuthError: (authError) => set({ authError }),
+
+      clearAuthError: () => set({ authError: null }),
       
       logout: () => set({ 
         user: null, 

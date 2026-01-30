@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { authError, clearAuthError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,6 +21,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    clearAuthError();
     setIsLoading(true);
 
     const result = await login(email, password);
@@ -64,9 +67,9 @@ export default function LoginPage() {
               autoComplete="current-password"
               required
             />
-            {error && (
+            {(authError || error) && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                {error}
+                {authError || error}
               </div>
             )}
             <Button

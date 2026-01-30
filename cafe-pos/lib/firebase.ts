@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDdwwpkUq6tQbsTTKXUQ_eHR-uYN2ytgKI",
@@ -15,6 +16,7 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
+const realtimeDb = getDatabase(app);
 
 // Tenant ID (para multi-tenant, ahora hardcodeado)
 export const TENANT_ID = 'cafe_principal_001';
@@ -25,4 +27,4 @@ if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_EMULAT
   connectFirestoreEmulator(db, 'localhost', 8080);
 }
 
-export { app, auth, db };
+export { app, auth, db, realtimeDb };
