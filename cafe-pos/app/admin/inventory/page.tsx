@@ -7,13 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { collection, query, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, orderBy } from 'firebase/firestore';
-import { db, TENANT_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useTenantId } from '@/hooks/useTenantId';
 import { InventoryItem, InventoryMovement, MovementType } from '@/types';
 import { INVENTORY_UNITS, MOVEMENT_TYPES } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils';
 
 export default function AdminInventoryPage() {
+  const tenantId = useTenantId();
   const { user } = useAuthStore();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
@@ -39,9 +41,13 @@ export default function AdminInventoryPage() {
   });
 
   useEffect(() => {
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
     // Escuchar items de inventario
     const itemsQuery = query(
-      collection(db, 'tenants', TENANT_ID, 'inventoryItems'),
+      collection(db, 'tenants', tenantId, 'inventoryItems'),
       orderBy('name')
     );
     
@@ -58,7 +64,7 @@ export default function AdminInventoryPage() {
 
     // Escuchar movimientos
     const movementsQuery = query(
-      collection(db, 'tenants', TENANT_ID, 'inventoryMovements'),
+      collection(db, 'tenants', tenantId, 'inventoryMovements'),
       orderBy('createdAt', 'desc')
     );
     
@@ -76,16 +82,20 @@ export default function AdminInventoryPage() {
       unsubscribeItems();
       unsubscribeMovements();
     };
-  }, []);
+  }, [tenantId]);
 
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      await addDoc(collection(db, 'tenants', TENANT_ID, 'inventoryItems'), {
+      if (!tenantId) {
+        alert('Tenant no configurado.');
+        return;
+      }
+      await addDoc(collection(db, 'tenants', tenantId, 'inventoryItems'), {
         ...itemForm,
         lastMovementAt: serverTimestamp(),
-        tenantId: TENANT_ID,
+        tenantId,
       });
       
       setShowItemForm(false);
@@ -101,8 +111,12 @@ export default function AdminInventoryPage() {
     if (!selectedItem || !user) return;
     
     try {
+      if (!tenantId) {
+        alert('Tenant no configurado.');
+        return;
+      }
       // Crear movimiento
-      await addDoc(collection(db, 'tenants', TENANT_ID, 'inventoryMovements'), {
+      await addDoc(collection(db, 'tenants', tenantId, 'inventoryMovements'), {
         itemId: selectedItem.id,
         itemName: selectedItem.name,
         type: movementForm.type,
@@ -112,7 +126,7 @@ export default function AdminInventoryPage() {
         createdBy: user.id,
         createdByName: user.displayName,
         createdAt: serverTimestamp(),
-        tenantId: TENANT_ID,
+        tenantId,
       });
       
       // Actualizar stock del item
@@ -123,7 +137,7 @@ export default function AdminInventoryPage() {
         : movementForm.quantity; // adjustment
       
       await updateDoc(
-        doc(db, 'tenants', TENANT_ID, 'inventoryItems', selectedItem.id),
+        doc(db, 'tenants', tenantId, 'inventoryItems', selectedItem.id),
         {
           currentStock: newStock,
           lastMovementAt: serverTimestamp(),

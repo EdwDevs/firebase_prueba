@@ -11,16 +11,22 @@ import {
   doc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db, TENANT_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useTenantId } from '@/hooks/useTenantId';
 import { BarTicket } from '@/types';
 
-const getBarTicketsRef = () => collection(db, 'tenants', TENANT_ID, 'barTickets');
-
 export function useBar() {
+  const tenantId = useTenantId();
   const [tickets, setTickets] = useState<BarTicket[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getBarTicketsRef = () => collection(db, 'tenants', tenantId, 'barTickets');
+
   useEffect(() => {
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
     const q = query(
       getBarTicketsRef(),
       orderBy('sentToBarAt', 'asc')
@@ -43,11 +49,14 @@ export function useBar() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   // Marcar ticket como listo
   const markReady = useCallback(async (ticketId: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
       const ticketRef = doc(getBarTicketsRef(), ticketId);
       await updateDoc(ticketRef, {
         status: 'ready',
@@ -63,11 +72,14 @@ export function useBar() {
       console.error('Error marcando como listo:', error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   // Marcar ticket como preparando (revertir)
   const markPreparing = useCallback(async (ticketId: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
       const ticketRef = doc(getBarTicketsRef(), ticketId);
       await updateDoc(ticketRef, {
         status: 'preparing',
@@ -78,7 +90,7 @@ export function useBar() {
       console.error('Error marcando como preparando:', error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   // Tickets filtrados por estado
   const preparingTickets = tickets.filter((t) => t.status === 'preparing');

@@ -21,7 +21,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const TENANT_ID = 'cafe_principal_001';
+const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID ?? process.env.TENANT_ID ?? '';
+
+if (!TENANT_ID) {
+  throw new Error('TENANT_ID no está configurado. Define NEXT_PUBLIC_TENANT_ID o TENANT_ID.');
+}
 
 // ==================== DATOS DEL MENÚ ====================
 

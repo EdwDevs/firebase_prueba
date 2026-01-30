@@ -14,20 +14,26 @@ import {
   getDocs,
   Timestamp,
 } from 'firebase/firestore';
-import { db, TENANT_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useTenantId } from '@/hooks/useTenantId';
 import { CashSession } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 
-const getCashSessionsRef = () => collection(db, 'tenants', TENANT_ID, 'cashSessions');
-
 export function useCash() {
+  const tenantId = useTenantId();
   const [sessions, setSessions] = useState<CashSession[]>([]);
   const [activeSession, setActiveSession] = useState<CashSession | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
 
+  const getCashSessionsRef = () => collection(db, 'tenants', tenantId, 'cashSessions');
+
   // Escuchar sesiones de caja
   useEffect(() => {
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
     const q = query(
       getCashSessionsRef(),
       orderBy('openedAt', 'desc')
@@ -53,7 +59,7 @@ export function useCash() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   // Abrir turno
   const openSession = useCallback(async (
@@ -68,6 +74,9 @@ export function useCash() {
     }
 
     try {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado' };
+      }
       const sessionData = {
         openedAt: serverTimestamp(),
         openedBy: user.id,
@@ -88,7 +97,7 @@ export function useCash() {
         ordersCount: 0,
         notes,
         isActive: true,
-        tenantId: TENANT_ID,
+        tenantId,
       };
 
       const sessionRef = await addDoc(getCashSessionsRef(), sessionData);
@@ -97,7 +106,7 @@ export function useCash() {
       console.error('Error abriendo turno:', error);
       return { success: false, error: error.message };
     }
-  }, [user, activeSession]);
+  }, [user, activeSession, tenantId]);
 
   // Cerrar turno
   const closeSession = useCallback(async (
@@ -108,9 +117,12 @@ export function useCash() {
     if (!activeSession) return { success: false, error: 'No hay turno activo' };
 
     try {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado' };
+      }
       // Calcular totales del turno
       const sessionStart = activeSession.openedAt;
-      const ordersRef = collection(db, 'tenants', TENANT_ID, 'orders');
+      const ordersRef = collection(db, 'tenants', tenantId, 'orders');
       const q = query(
         ordersRef,
         where('cashSessionId', '==', activeSession.id),
@@ -153,12 +165,15 @@ export function useCash() {
       console.error('Error cerrando turno:', error);
       return { success: false, error: error.message };
     }
-  }, [user, activeSession]);
+  }, [user, activeSession, tenantId]);
 
   // Obtener resumen del turno actual
   const getSessionSummary = useCallback(async (sessionId: string) => {
     try {
-      const ordersRef = collection(db, 'tenants', TENANT_ID, 'orders');
+      if (!tenantId) {
+        return null;
+      }
+      const ordersRef = collection(db, 'tenants', tenantId, 'orders');
       const q = query(
         ordersRef,
         where('cashSessionId', '==', sessionId),
@@ -187,7 +202,7 @@ export function useCash() {
       console.error('Error obteniendo resumen:', error);
       return null;
     }
-  }, []);
+  }, [tenantId]);
 
   return {
     sessions,
@@ -202,6 +217,7 @@ export function useCash() {
 
 // Hook para reportes de ventas
 export function useSalesReport(startDate: Date, endDate: Date) {
+  const tenantId = useTenantId();
   const [report, setReport] = useState({
     totalSales: 0,
     totalByMethod: { cash: 0, nequi: 0, qr: 0 },
@@ -211,7 +227,11 @@ export function useSalesReport(startDate: Date, endDate: Date) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const ordersRef = collection(db, 'tenants', TENANT_ID, 'orders');
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
+    const ordersRef = collection(db, 'tenants', tenantId, 'orders');
     const q = query(
       ordersRef,
       where('status', '==', 'paid'),
@@ -247,7 +267,7 @@ export function useSalesReport(startDate: Date, endDate: Date) {
     });
 
     return () => unsubscribe();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, tenantId]);
 
   return { report, loading };
 }

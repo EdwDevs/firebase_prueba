@@ -18,8 +18,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const realtimeDb = getDatabase(app);
 
-// Tenant ID (para multi-tenant, ahora hardcodeado)
-export const TENANT_ID = 'cafe_principal_001';
+// Tenant ID (para multi-tenant, configurable por env o usuario autenticado)
+export const DEFAULT_TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID ?? '';
 
 // Emuladores (solo desarrollo)
 if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_EMULATORS === 'true') {
