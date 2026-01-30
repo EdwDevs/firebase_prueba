@@ -49,10 +49,17 @@ service cloud.firestore {
     // ==================== USUARIOS ====================
     
     match /tenants/{tenantId}/users/{userId} {
-      allow read: if belongsToTenant(tenantId);
+      allow read: if belongsToTenant(tenantId) ||
+        (isOwner(userId) && resource.data.tenantId == tenantId);
       
       // Solo admin puede crear/modificar usuarios
-      allow create, update: if isAdmin() && 
+      allow create: if (isAdmin() && request.resource.data.tenantId == tenantId) ||
+        (isOwner(userId) &&
+          request.resource.data.tenantId == tenantId &&
+          request.resource.data.role == 'waiter' &&
+          request.resource.data.isActive == true);
+      
+      allow update: if isAdmin() && 
         request.resource.data.tenantId == tenantId;
       
       allow delete: if isAdmin();
