@@ -61,13 +61,14 @@ service cloud.firestore {
         (isOwner(userId) && resource.data.tenantId == tenantId);
       
       // Solo admin puede crear/modificar usuarios
-      allow create: if (isAdmin() && request.resource.data.tenantId == tenantId) ||
+      allow create: if (isAdmin(tenantId) && request.resource.data.tenantId == tenantId) ||
         (isOwner(userId) &&
           request.resource.data.tenantId == tenantId &&
           request.resource.data.role == 'waiter' &&
-          request.resource.data.isActive == true);
+          request.resource.data.displayName is string &&
+          request.resource.data.keys().hasOnly(['role', 'displayName', 'tenantId']));
       
-      allow update: if isAdmin() && 
+      allow update: if isAdmin(tenantId) && 
         request.resource.data.tenantId == tenantId;
       
       allow delete: if isAdmin(tenantId);

@@ -8,7 +8,7 @@ import {
   setPersistence,
   browserLocalPersistence
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, DEFAULT_TENANT_ID } from '@/lib/firebase';
 import { useAuthStore } from '@/store/authStore';
 import { User } from '@/types';
@@ -26,9 +26,28 @@ export function useAuth() {
           const tenantIdFromClaims = tokenResult.claims.tenantId as string | undefined;
           const tenantId = tenantIdFromClaims ?? DEFAULT_TENANT_ID;
 
+          const getDisplayName = () =>
+            firebaseUser.displayName ||
+            firebaseUser.email?.split('@')[0] ||
+            'Usuario';
+
+          const buildUserFromDoc = (
+            userData: Partial<Omit<User, 'id'>> & {
+              createdAt?: { toDate?: () => Date } | Date;
+            }
+          ): User => ({
+            id: firebaseUser.uid,
+            email: userData.email ?? firebaseUser.email ?? '',
+            displayName: userData.displayName ?? getDisplayName(),
+            role: userData.role ?? 'waiter',
+            isActive: userData.isActive ?? true,
+            createdAt: userData.createdAt?.toDate?.() ?? userData.createdAt ?? new Date(),
+            tenantId: userData.tenantId ?? tenantId,
+          });
+
           if (!tenantId) {
             setAuthError('No hay tenant configurado para este usuario.');
-            logout();
+            setUser(null);
             return;
           }
 
@@ -38,52 +57,47 @@ export function useAuth() {
           );
           
           if (userDoc.exists()) {
-            const userData = userDoc.data() as Omit<User, 'id'> & {
+            const userData = userDoc.data() as Partial<Omit<User, 'id'>> & {
               createdAt?: { toDate?: () => Date };
             };
-            setUser({
-              id: firebaseUser.uid,
-              ...userData,
-              tenantId: userData.tenantId ?? tenantId,
-              createdAt: userData.createdAt?.toDate?.() ?? userData.createdAt ?? new Date(),
-            });
+            setUser(buildUserFromDoc(userData));
             setAuthError(null);
           } else {
-            const displayName =
-              firebaseUser.displayName ||
-              firebaseUser.email?.split('@')[0] ||
-              'Usuario';
-            const newUserData: Omit<User, 'id'> = {
-              email: firebaseUser.email || '',
-              displayName,
-              role: 'waiter',
-              isActive: true,
-              createdAt: new Date(),
+            const provisionData = {
+              displayName: getDisplayName(),
+              role: 'waiter' as const,
               tenantId,
             };
 
             try {
-              await setDoc(doc(db, 'tenants', tenantId, 'users', firebaseUser.uid), {
-                ...newUserData,
-                createdAt: serverTimestamp(),
-              });
-              setUser({
-                id: firebaseUser.uid,
-                ...newUserData,
-              });
-              setAuthError(null);
-            } catch (error) {
-              console.error('Usuario no encontrado en Firestore y falló el provisioning:', error);
-              setAuthError(
-                'No se encontró un perfil en Firestore para este usuario. Verifica el tenant y los permisos.'
+              await setDoc(doc(db, 'tenants', tenantId, 'users', firebaseUser.uid), provisionData);
+              setUser(
+                buildUserFromDoc({
+                  ...provisionData,
+                  email: firebaseUser.email ?? '',
+                  isActive: true,
+                  createdAt: new Date(),
+                })
               );
-              logout();
+              setAuthError(null);
+            } catch (error: any) {
+              console.error('Usuario no encontrado en Firestore y falló el provisioning:', error);
+              const message =
+                error?.code === 'permission-denied'
+                  ? 'No tienes permisos para crear tu perfil. Contacta al administrador.'
+                  : 'No se pudo crear tu perfil. Verifica el tenant y tus permisos.';
+              setAuthError(message);
+              setUser(null);
             }
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error cargando datos de usuario:', error);
-          setAuthError('No pudimos cargar tu perfil. Intenta de nuevo o contacta soporte.');
-          logout();
+          const message =
+            error?.code === 'permission-denied'
+              ? 'No tienes permisos para acceder a este tenant o usuario no provisionado.'
+              : 'No pudimos cargar tu perfil. Intenta de nuevo o contacta soporte.';
+          setAuthError(message);
+          setUser(null);
         }
       } else {
         logout();
