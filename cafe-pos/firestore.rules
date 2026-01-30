@@ -8,32 +8,40 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    function getUserData() {
-      return get(/databases/$(database)/documents/tenants/$(request.auth.token.tenantId)/users/$(request.auth.uid)).data;
+    function hasTenantClaim(tenantId) {
+      return request.auth.token.tenantId == tenantId;
+    }
+
+    function getUserDoc(tenantId) {
+      return get(/databases/$(database)/documents/tenants/$(tenantId)/users/$(request.auth.uid));
+    }
+
+    function hasUserDoc(tenantId) {
+      return exists(/databases/$(database)/documents/tenants/$(tenantId)/users/$(request.auth.uid));
+    }
+
+    function getUserRole(tenantId) {
+      return hasUserDoc(tenantId) ? getUserDoc(tenantId).data.role : null;
     }
     
-    function getTenantId() {
-      return request.auth.token.tenantId;
+    function isAdmin(tenantId) {
+      return isAuthenticated() && (request.auth.token.role == 'admin' || getUserRole(tenantId) == 'admin');
     }
     
-    function isAdmin() {
-      return isAuthenticated() && request.auth.token.role == 'admin';
+    function isCashier(tenantId) {
+      return isAuthenticated() && (request.auth.token.role == 'cashier' || getUserRole(tenantId) == 'cashier');
     }
     
-    function isCashier() {
-      return isAuthenticated() && request.auth.token.role == 'cashier';
+    function isWaiter(tenantId) {
+      return isAuthenticated() && (request.auth.token.role == 'waiter' || getUserRole(tenantId) == 'waiter');
     }
     
-    function isWaiter() {
-      return isAuthenticated() && request.auth.token.role == 'waiter';
-    }
-    
-    function isStaff() {
-      return isAdmin() || isCashier() || isWaiter();
+    function isStaff(tenantId) {
+      return isAdmin(tenantId) || isCashier(tenantId) || isWaiter(tenantId);
     }
     
     function belongsToTenant(tenantId) {
-      return isAuthenticated() && getTenantId() == tenantId;
+      return isAuthenticated() && (hasTenantClaim(tenantId) || hasUserDoc(tenantId));
     }
     
     function isOwner(userId) {
@@ -62,31 +70,31 @@ service cloud.firestore {
       allow update: if isAdmin() && 
         request.resource.data.tenantId == tenantId;
       
-      allow delete: if isAdmin();
+      allow delete: if isAdmin(tenantId);
     }
     
     // ==================== MESAS ====================
     
     match /tenants/{tenantId}/tables/{tableId} {
       allow read: if belongsToTenant(tenantId);
-      allow write: if isAdmin(); // Solo admin configura mesas
+      allow write: if isAdmin(tenantId); // Solo admin configura mesas
     }
     
     // ==================== PRODUCTOS Y CATEGORÍAS ====================
     
     match /tenants/{tenantId}/products/{productId} {
       allow read: if belongsToTenant(tenantId);
-      allow write: if isAdmin();
+      allow write: if isAdmin(tenantId);
     }
     
     match /tenants/{tenantId}/categories/{categoryId} {
       allow read: if belongsToTenant(tenantId);
-      allow write: if isAdmin();
+      allow write: if isAdmin(tenantId);
     }
     
     match /tenants/{tenantId}/modifierGroups/{groupId} {
       allow read: if belongsToTenant(tenantId);
-      allow write: if isAdmin();
+      allow write: if isAdmin(tenantId);
     }
     
     // ==================== ÓRDENES ====================
@@ -96,25 +104,25 @@ service cloud.firestore {
       
       // Crear orden: mesero, cajero o admin
       allow create: if belongsToTenant(tenantId) && 
-        (isWaiter() || isCashier() || isAdmin()) &&
+        (isWaiter(tenantId) || isCashier(tenantId) || isAdmin(tenantId)) &&
         request.resource.data.status == 'open' &&
         request.resource.data.paymentStatus == 'pending';
       
       // Actualizar orden abierta: mesero puede modificar items
       allow update: if belongsToTenant(tenantId) && (
         // Admin puede todo
-        isAdmin() ||
+        isAdmin(tenantId) ||
         // Cajero puede cobrar (cambiar estado a paid)
-        (isCashier() && 
+        (isCashier(tenantId) && 
          resource.data.status == 'open' && 
          request.resource.data.status == 'paid') ||
         // Mesero puede modificar orden abierta
-        (isWaiter() && 
+        (isWaiter(tenantId) && 
          resource.data.status == 'open' && 
          request.resource.data.status == 'open')
       );
       
-      allow delete: if isAdmin();
+      allow delete: if isAdmin(tenantId);
     }
     
     // ==================== ITEMS DE ORDEN ====================
@@ -123,7 +131,7 @@ service cloud.firestore {
       allow read: if belongsToTenant(tenantId);
       
       allow create, update, delete: if belongsToTenant(tenantId) && 
-        (isWaiter() || isCashier() || isAdmin()) &&
+        (isWaiter(tenantId) || isCashier(tenantId) || isAdmin(tenantId)) &&
         get(/databases/$(database)/documents/tenants/$(tenantId)/orders/$(orderId)).data.status == 'open';
     }
     
@@ -134,7 +142,7 @@ service cloud.firestore {
       
       // Cualquier staff puede marcar como listo
       allow update: if belongsToTenant(tenantId) && 
-        (isWaiter() || isCashier() || isAdmin()) &&
+        (isWaiter(tenantId) || isCashier(tenantId) || isAdmin(tenantId)) &&
         request.resource.data.status in ['preparing', 'ready'];
     }
     
@@ -145,12 +153,12 @@ service cloud.firestore {
       
       // Abrir turno: cajero o admin
       allow create: if belongsToTenant(tenantId) && 
-        (isCashier() || isAdmin()) &&
+        (isCashier(tenantId) || isAdmin(tenantId)) &&
         request.resource.data.isActive == true;
       
       // Cerrar turno: cajero o admin
       allow update: if belongsToTenant(tenantId) && 
-        (isCashier() || isAdmin()) &&
+        (isCashier(tenantId) || isAdmin(tenantId)) &&
         resource.data.isActive == true &&
         request.resource.data.isActive == false;
     }
@@ -159,26 +167,26 @@ service cloud.firestore {
     
     match /tenants/{tenantId}/inventoryItems/{itemId} {
       allow read: if belongsToTenant(tenantId);
-      allow write: if isAdmin() || isCashier(); // Cajero puede ajustar
+      allow write: if isAdmin(tenantId) || isCashier(tenantId); // Cajero puede ajustar
     }
     
     match /tenants/{tenantId}/inventoryMovements/{movementId} {
       allow read: if belongsToTenant(tenantId);
       allow create: if belongsToTenant(tenantId) && 
-        (isAdmin() || isCashier());
+        (isAdmin(tenantId) || isCashier(tenantId));
     }
     
     // ==================== CONFIGURACIÓN ====================
     
     match /tenants/{tenantId}/config/{document=**} {
       allow read: if belongsToTenant(tenantId);
-      allow write: if isAdmin();
+      allow write: if isAdmin(tenantId);
     }
     
     // ==================== AUDIT LOGS (SOLO APPEND) ====================
     
     match /tenants/{tenantId}/auditLogs/{logId} {
-      allow read: if isAdmin();
+      allow read: if isAdmin(tenantId);
       allow create: if belongsToTenant(tenantId);
       allow update, delete: if false;
     }
