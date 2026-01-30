@@ -6,16 +6,22 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { collection, query, onSnapshot, updateDoc, doc, writeBatch } from 'firebase/firestore';
-import { db, TENANT_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useTenantId } from '@/hooks/useTenantId';
 import { Table } from '@/types';
 
 export default function AdminTablesPage() {
+  const tenantId = useTenantId();
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'tenants', TENANT_ID, 'tables'));
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
+    const q = query(collection(db, 'tenants', tenantId, 'tables'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const tablesData = snapshot.docs
@@ -29,7 +35,7 @@ export default function AdminTablesPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   const handleUpdateName = (id: string, name: string) => {
     setTables((prev) =>
@@ -40,10 +46,15 @@ export default function AdminTablesPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      if (!tenantId) {
+        alert('Tenant no configurado.');
+        setSaving(false);
+        return;
+      }
       const batch = writeBatch(db);
       
       tables.forEach((table) => {
-        const tableRef = doc(db, 'tenants', TENANT_ID, 'tables', table.id);
+        const tableRef = doc(db, 'tenants', tenantId, 'tables', table.id);
         batch.update(tableRef, { name: table.name });
       });
       
@@ -61,10 +72,15 @@ export default function AdminTablesPage() {
     
     setSaving(true);
     try {
+      if (!tenantId) {
+        alert('Tenant no configurado.');
+        setSaving(false);
+        return;
+      }
       const batch = writeBatch(db);
       
       tables.forEach((table) => {
-        const tableRef = doc(db, 'tenants', TENANT_ID, 'tables', table.id);
+        const tableRef = doc(db, 'tenants', tenantId, 'tables', table.id);
         batch.update(tableRef, { name: `Mesa ${table.number}` });
       });
       

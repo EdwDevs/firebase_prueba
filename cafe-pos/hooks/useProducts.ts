@@ -14,14 +14,15 @@ import {
   serverTimestamp,
   getDocs,
 } from 'firebase/firestore';
-import { db, TENANT_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useTenantId } from '@/hooks/useTenantId';
 import { Product, Category, ModifierGroup } from '@/types';
 
-const getProductsRef = () => collection(db, 'tenants', TENANT_ID, 'products');
-const getCategoriesRef = () => collection(db, 'tenants', TENANT_ID, 'categories');
-const getModifierGroupsRef = () => collection(db, 'tenants', TENANT_ID, 'modifierGroups');
+const getTenantCollection = (tenantId: string, ...path: string[]) =>
+  collection(db, 'tenants', tenantId, ...path);
 
 export function useProducts() {
+  const tenantId = useTenantId();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [modifierGroups, setModifierGroups] = useState<ModifierGroup[]>([]);
@@ -29,8 +30,12 @@ export function useProducts() {
 
   // Escuchar productos
   useEffect(() => {
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
     const q = query(
-      getProductsRef(),
+      getTenantCollection(tenantId, 'products'),
       where('isActive', '==', true),
       orderBy('name')
     );
@@ -50,12 +55,15 @@ export function useProducts() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   // Escuchar categorías
   useEffect(() => {
+    if (!tenantId) {
+      return;
+    }
     const q = query(
-      getCategoriesRef(),
+      getTenantCollection(tenantId, 'categories'),
       orderBy('order', 'asc')
     );
 
@@ -71,12 +79,15 @@ export function useProducts() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   // Escuchar grupos de modificadores
   useEffect(() => {
+    if (!tenantId) {
+      return;
+    }
     const q = query(
-      getModifierGroupsRef(),
+      getTenantCollection(tenantId, 'modifierGroups'),
       orderBy('name')
     );
 
@@ -92,16 +103,19 @@ export function useProducts() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   // Crear producto
   const createProduct = useCallback(async (
     product: Omit<Product, 'id' | 'createdAt' | 'tenantId'>
   ): Promise<{ success: boolean; id?: string; error?: string }> => {
     try {
-      const docRef = await addDoc(getProductsRef(), {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
+      const docRef = await addDoc(getTenantCollection(tenantId, 'products'), {
         ...product,
-        tenantId: TENANT_ID,
+        tenantId,
         createdAt: serverTimestamp(),
       });
       return { success: true, id: docRef.id };
@@ -109,7 +123,7 @@ export function useProducts() {
       console.error('Error creando producto:', error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   // Actualizar producto
   const updateProduct = useCallback(async (
@@ -117,28 +131,34 @@ export function useProducts() {
     updates: Partial<Product>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const productRef = doc(getProductsRef(), productId);
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
+      const productRef = doc(getTenantCollection(tenantId, 'products'), productId);
       await updateDoc(productRef, updates);
       return { success: true };
     } catch (error: any) {
       console.error('Error actualizando producto:', error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   // Desactivar producto (soft delete)
   const deactivateProduct = useCallback(async (
     productId: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const productRef = doc(getProductsRef(), productId);
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
+      const productRef = doc(getTenantCollection(tenantId, 'products'), productId);
       await updateDoc(productRef, { isActive: false });
       return { success: true };
     } catch (error: any) {
       console.error('Error desactivando producto:', error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   // Obtener productos por categoría
   const getProductsByCategory = useCallback((categoryId: string): Product[] => {
@@ -176,11 +196,15 @@ export function useProducts() {
 
 // Hook para admin de categorías
 export function useCategories() {
+  const tenantId = useTenantId();
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
+    if (!tenantId) {
+      return;
+    }
     const q = query(
-      getCategoriesRef(),
+      getTenantCollection(tenantId, 'categories'),
       orderBy('order', 'asc')
     );
 
@@ -194,45 +218,54 @@ export function useCategories() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   const createCategory = useCallback(async (
     category: Omit<Category, 'id' | 'tenantId'>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      await addDoc(getCategoriesRef(), {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
+      await addDoc(getTenantCollection(tenantId, 'categories'), {
         ...category,
-        tenantId: TENANT_ID,
+        tenantId,
       });
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   const updateCategory = useCallback(async (
     categoryId: string,
     updates: Partial<Category>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const categoryRef = doc(getCategoriesRef(), categoryId);
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
+      const categoryRef = doc(getTenantCollection(tenantId, 'categories'), categoryId);
       await updateDoc(categoryRef, updates);
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   const deleteCategory = useCallback(async (
     categoryId: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      await deleteDoc(doc(getCategoriesRef(), categoryId));
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
+      await deleteDoc(doc(getTenantCollection(tenantId, 'categories'), categoryId));
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   return {
     categories,
@@ -244,11 +277,15 @@ export function useCategories() {
 
 // Hook para grupos de modificadores
 export function useModifierGroups() {
+  const tenantId = useTenantId();
   const [groups, setGroups] = useState<ModifierGroup[]>([]);
 
   useEffect(() => {
+    if (!tenantId) {
+      return;
+    }
     const q = query(
-      getModifierGroupsRef(),
+      getTenantCollection(tenantId, 'modifierGroups'),
       orderBy('name')
     );
 
@@ -262,45 +299,54 @@ export function useModifierGroups() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   const createGroup = useCallback(async (
     group: Omit<ModifierGroup, 'id' | 'tenantId'>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      await addDoc(getModifierGroupsRef(), {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
+      await addDoc(getTenantCollection(tenantId, 'modifierGroups'), {
         ...group,
-        tenantId: TENANT_ID,
+        tenantId,
       });
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   const updateGroup = useCallback(async (
     groupId: string,
     updates: Partial<ModifierGroup>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const groupRef = doc(getModifierGroupsRef(), groupId);
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
+      const groupRef = doc(getTenantCollection(tenantId, 'modifierGroups'), groupId);
       await updateDoc(groupRef, updates);
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   const deleteGroup = useCallback(async (
     groupId: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      await deleteDoc(doc(getModifierGroupsRef(), groupId));
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
+      await deleteDoc(doc(getTenantCollection(tenantId, 'modifierGroups'), groupId));
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   return {
     groups,

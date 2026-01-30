@@ -9,16 +9,22 @@ import {
   updateDoc,
   doc,
 } from 'firebase/firestore';
-import { db, TENANT_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useTenantId } from '@/hooks/useTenantId';
 import { Table } from '@/types';
 
-const getTablesRef = () => collection(db, 'tenants', TENANT_ID, 'tables');
-
 export function useTables() {
+  const tenantId = useTenantId();
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getTablesRef = () => collection(db, 'tenants', tenantId, 'tables');
+
   useEffect(() => {
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
     const q = query(
       getTablesRef(),
       orderBy('number', 'asc')
@@ -38,7 +44,7 @@ export function useTables() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   // Actualizar estado de mesa
   const updateTableStatus = useCallback(async (
@@ -47,6 +53,9 @@ export function useTables() {
     currentOrderId: string | null = null
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado.' };
+      }
       const tableRef = doc(getTablesRef(), tableId);
       await updateDoc(tableRef, {
         status,
@@ -57,7 +66,7 @@ export function useTables() {
       console.error('Error actualizando mesa:', error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   // Obtener mesa por ID
   const getTableById = useCallback((tableId: string): Table | undefined => {

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { onValue, ref, set } from 'firebase/database';
-import { realtimeDb, TENANT_ID } from '@/lib/firebase';
+import { realtimeDb } from '@/lib/firebase';
+import { useTenantId } from '@/hooks/useTenantId';
 
 type RealtimeStatus = {
   value: string;
@@ -10,11 +11,16 @@ type RealtimeStatus = {
 };
 
 export function useRealtimeStatus(statusKey: string) {
+  const tenantId = useTenantId();
   const [status, setStatus] = useState<RealtimeStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const statusRef = ref(realtimeDb, `tenants/${TENANT_ID}/status/${statusKey}`);
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
+    const statusRef = ref(realtimeDb, `tenants/${tenantId}/status/${statusKey}`);
     const unsubscribe = onValue(
       statusRef,
       (snapshot) => {
@@ -28,19 +34,22 @@ export function useRealtimeStatus(statusKey: string) {
     );
 
     return () => unsubscribe();
-  }, [statusKey]);
+  }, [statusKey, tenantId]);
 
   const updateStatus = useCallback(
     async (value: string) => {
+      if (!tenantId) {
+        throw new Error('Tenant no configurado.');
+      }
       const nextStatus = {
         value,
         updatedAt: Date.now(),
       };
 
-      await set(ref(realtimeDb, `tenants/${TENANT_ID}/status/${statusKey}`), nextStatus);
+      await set(ref(realtimeDb, `tenants/${tenantId}/status/${statusKey}`), nextStatus);
       return nextStatus;
     },
-    [statusKey]
+    [statusKey, tenantId]
   );
 
   return { status, loading, updateStatus };

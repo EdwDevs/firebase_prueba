@@ -9,7 +9,7 @@ import {
   browserLocalPersistence
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db, TENANT_ID } from '@/lib/firebase';
+import { auth, db, DEFAULT_TENANT_ID } from '@/lib/firebase';
 import { useAuthStore } from '@/store/authStore';
 import { User } from '@/types';
 
@@ -22,9 +22,19 @@ export function useAuth() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
+          const tokenResult = await firebaseUser.getIdTokenResult();
+          const tenantIdFromClaims = tokenResult.claims.tenantId as string | undefined;
+          const tenantId = tenantIdFromClaims ?? DEFAULT_TENANT_ID;
+
+          if (!tenantId) {
+            setAuthError('No hay tenant configurado para este usuario.');
+            logout();
+            return;
+          }
+
           // Obtener datos del usuario desde Firestore
           const userDoc = await getDoc(
-            doc(db, 'tenants', TENANT_ID, 'users', firebaseUser.uid)
+            doc(db, 'tenants', tenantId, 'users', firebaseUser.uid)
           );
           
           if (userDoc.exists()) {
@@ -34,6 +44,7 @@ export function useAuth() {
             setUser({
               id: firebaseUser.uid,
               ...userData,
+              tenantId: userData.tenantId ?? tenantId,
               createdAt: userData.createdAt?.toDate?.() ?? userData.createdAt ?? new Date(),
             });
             setAuthError(null);
@@ -48,11 +59,11 @@ export function useAuth() {
               role: 'waiter',
               isActive: true,
               createdAt: new Date(),
-              tenantId: TENANT_ID,
+              tenantId,
             };
 
             try {
-              await setDoc(doc(db, 'tenants', TENANT_ID, 'users', firebaseUser.uid), {
+              await setDoc(doc(db, 'tenants', tenantId, 'users', firebaseUser.uid), {
                 ...newUserData,
                 createdAt: serverTimestamp(),
               });

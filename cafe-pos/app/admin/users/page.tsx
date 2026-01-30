@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { collection, query, onSnapshot, updateDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, TENANT_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useTenantId } from '@/hooks/useTenantId';
 import { User, UserRole } from '@/types';
 import { ROLES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 export default function AdminUsersPage() {
+  const tenantId = useTenantId();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -27,7 +29,11 @@ export default function AdminUsersPage() {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'tenants', TENANT_ID, 'users'));
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
+    const q = query(collection(db, 'tenants', tenantId, 'users'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const usersData = snapshot.docs.map((doc) => ({
@@ -41,16 +47,20 @@ export default function AdminUsersPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      if (!tenantId) {
+        alert('Tenant no configurado.');
+        return;
+      }
       if (editingUser) {
         // Actualizar usuario existente
         await updateDoc(
-          doc(db, 'tenants', TENANT_ID, 'users', editingUser.id),
+          doc(db, 'tenants', tenantId, 'users', editingUser.id),
           {
             displayName: formData.displayName,
             role: formData.role,
@@ -58,13 +68,13 @@ export default function AdminUsersPage() {
         );
       } else {
         // Crear nuevo usuario
-        await addDoc(collection(db, 'tenants', TENANT_ID, 'users'), {
+        await addDoc(collection(db, 'tenants', tenantId, 'users'), {
           email: formData.email,
           displayName: formData.displayName,
           role: formData.role,
           isActive: true,
           createdAt: serverTimestamp(),
-          tenantId: TENANT_ID,
+          tenantId,
         });
       }
       
@@ -79,8 +89,12 @@ export default function AdminUsersPage() {
 
   const handleToggleActive = async (user: User) => {
     try {
+      if (!tenantId) {
+        alert('Tenant no configurado.');
+        return;
+      }
       await updateDoc(
-        doc(db, 'tenants', TENANT_ID, 'users', user.id),
+        doc(db, 'tenants', tenantId, 'users', user.id),
         { isActive: !user.isActive }
       );
     } catch (error) {

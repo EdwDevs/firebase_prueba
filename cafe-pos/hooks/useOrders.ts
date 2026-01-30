@@ -16,23 +16,29 @@ import {
   writeBatch,
   Timestamp,
 } from 'firebase/firestore';
-import { db, TENANT_ID } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { useTenantId } from '@/hooks/useTenantId';
 import { Order, OrderItem, PaymentMethod, OrderType } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { generateId } from '@/lib/utils';
 
-const getOrdersRef = () => collection(db, 'tenants', TENANT_ID, 'orders');
-const getOrderItemsRef = (orderId: string) => 
-  collection(db, 'tenants', TENANT_ID, 'orders', orderId, 'orderItems');
-const getBarTicketsRef = () => collection(db, 'tenants', TENANT_ID, 'barTickets');
-
 export function useOrders() {
+  const tenantId = useTenantId();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
 
+  const getOrdersRef = () => collection(db, 'tenants', tenantId, 'orders');
+  const getOrderItemsRef = (orderId: string) =>
+    collection(db, 'tenants', tenantId, 'orders', orderId, 'orderItems');
+  const getBarTicketsRef = () => collection(db, 'tenants', tenantId, 'barTickets');
+
   // Escuchar órdenes abiertas en tiempo real
   useEffect(() => {
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
     const q = query(
       getOrdersRef(),
       where('status', '==', 'open'),
@@ -56,7 +62,7 @@ export function useOrders() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tenantId]);
 
   // Crear nueva orden
   const createOrder = useCallback(async (
@@ -74,6 +80,9 @@ export function useOrders() {
     if (!user) return { success: false, error: 'No autenticado' };
 
     try {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado' };
+      }
       const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
       
       const orderData = {
@@ -96,7 +105,7 @@ export function useOrders() {
         paidAt: null,
         paidBy: null,
         cashSessionId: null,
-        tenantId: TENANT_ID,
+        tenantId,
       };
 
       const orderRef = await addDoc(getOrdersRef(), orderData);
@@ -108,7 +117,7 @@ export function useOrders() {
         const itemRef = doc(getOrderItemsRef(orderRef.id));
         batch.set(itemRef, {
           ...item,
-          tenantId: TENANT_ID,
+          tenantId,
         });
         
         // Crear ticket de barra si aplica
@@ -132,7 +141,7 @@ export function useOrders() {
             createdAt: serverTimestamp(),
             sentToBarAt: serverTimestamp(),
             readyAt: null,
-            tenantId: TENANT_ID,
+            tenantId,
           });
         }
       });
@@ -144,7 +153,7 @@ export function useOrders() {
       console.error('Error creando orden:', error);
       return { success: false, error: error.message };
     }
-  }, [user]);
+  }, [tenantId, user]);
 
   // Actualizar orden
   const updateOrder = useCallback(async (
@@ -152,6 +161,9 @@ export function useOrders() {
     updates: Partial<Order>
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado' };
+      }
       const orderRef = doc(getOrdersRef(), orderId);
       await updateDoc(orderRef, {
         ...updates,
@@ -162,7 +174,7 @@ export function useOrders() {
       console.error('Error actualizando orden:', error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   // Cobrar orden
   const payOrder = useCallback(async (
@@ -173,6 +185,9 @@ export function useOrders() {
     if (!user) return { success: false, error: 'No autenticado' };
 
     try {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado' };
+      }
       const orderRef = doc(getOrdersRef(), orderId);
       await updateDoc(orderRef, {
         status: 'paid',
@@ -188,13 +203,16 @@ export function useOrders() {
       console.error('Error cobrando orden:', error);
       return { success: false, error: error.message };
     }
-  }, [user]);
+  }, [tenantId, user]);
 
   // Marcar domicilio como entregado
   const markDelivered = useCallback(async (
     orderId: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado' };
+      }
       const orderRef = doc(getOrdersRef(), orderId);
       await updateDoc(orderRef, {
         status: 'delivered',
@@ -205,13 +223,16 @@ export function useOrders() {
       console.error('Error marcando como entregado:', error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   // Cancelar orden
   const cancelOrder = useCallback(async (
     orderId: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      if (!tenantId) {
+        return { success: false, error: 'Tenant no configurado' };
+      }
       const orderRef = doc(getOrdersRef(), orderId);
       await updateDoc(orderRef, {
         status: 'cancelled',
@@ -222,11 +243,14 @@ export function useOrders() {
       console.error('Error cancelando orden:', error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [tenantId]);
 
   // Obtener items de una orden
   const getOrderItems = useCallback(async (orderId: string): Promise<OrderItem[]> => {
     try {
+      if (!tenantId) {
+        return [];
+      }
       const itemsSnapshot = await getDocs(getOrderItemsRef(orderId));
       return itemsSnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -238,7 +262,7 @@ export function useOrders() {
       console.error('Error obteniendo items:', error);
       return [];
     }
-  }, []);
+  }, [tenantId]);
 
   return {
     orders,
@@ -254,12 +278,17 @@ export function useOrders() {
 
 // Hook para obtener órdenes por fecha (reportes)
 export function useOrdersByDate(startDate: Date, endDate: Date) {
+  const tenantId = useTenantId();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
     const q = query(
-      getOrdersRef(),
+      collection(db, 'tenants', tenantId, 'orders'),
       where('status', '==', 'paid'),
       where('paidAt', '>=', Timestamp.fromDate(startDate)),
       where('paidAt', '<=', Timestamp.fromDate(endDate)),
@@ -283,7 +312,7 @@ export function useOrdersByDate(startDate: Date, endDate: Date) {
     });
 
     return () => unsubscribe();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, tenantId]);
 
   return { orders, loading };
 }
