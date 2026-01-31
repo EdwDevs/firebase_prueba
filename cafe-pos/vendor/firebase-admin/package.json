@@ -1,0 +1,12 @@
+{
+  "name": "firebase-admin",
+  "version": "12.7.0",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./app": "./app.js",
+    "./auth": "./auth.js",
+    "./firestore": "./firestore.js"
+  },
+  "types": "index.d.ts"
+}
