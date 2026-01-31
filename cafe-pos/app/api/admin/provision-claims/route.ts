@@ -2,11 +2,8 @@ import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminAuth, adminDb } from '@/lib/firebaseAdmin';
 
-const getTenantId = (requestedTenantId?: string) =>
-  requestedTenantId ??
-  process.env.NEXT_PUBLIC_TENANT_ID ??
-  process.env.DEFAULT_TENANT_ID ??
-  '';
+const getDefaultTenantId = () =>
+  process.env.NEXT_PUBLIC_TENANT_ID ?? process.env.DEFAULT_TENANT_ID ?? '';
 
 const getDisplayName = (decoded: { name?: string; email?: string }) =>
   decoded.name ?? decoded.email?.split('@')[0] ?? 'Usuario';
@@ -24,11 +21,29 @@ export async function POST(request: Request) {
     const payload = await request.json().catch(() => ({}));
     const targetUid = (payload.uid as string | undefined) ?? decoded.uid;
 
-    if (targetUid !== decoded.uid && decoded.role !== 'admin') {
+    const isAdmin = decoded.role === 'admin';
+    const isSelfProvision = targetUid === decoded.uid;
+
+    if (!isSelfProvision && !isAdmin) {
       return NextResponse.json({ error: 'No autorizado para asignar claims.' }, { status: 403 });
     }
 
-    const tenantId = getTenantId(payload.tenantId as string | undefined);
+    const requestedTenantId = payload.tenantId as string | undefined;
+    let tenantId = '';
+
+    if (isSelfProvision) {
+      if (requestedTenantId && requestedTenantId !== decoded.tenantId) {
+        return NextResponse.json(
+          { error: 'No autorizado para asignar claims de otro tenant.' },
+          { status: 403 }
+        );
+      }
+
+      tenantId = decoded.tenantId ?? getDefaultTenantId();
+    } else {
+      tenantId = requestedTenantId ?? getDefaultTenantId();
+    }
+
     if (!tenantId) {
       return NextResponse.json({ error: 'Tenant no configurado.' }, { status: 400 });
     }
