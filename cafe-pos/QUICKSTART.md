@@ -64,6 +64,18 @@ Usa Firebase Admin SDK o una Cloud Function para establecer:
 }
 ```
 
+### Configurar credenciales del Admin SDK en producción
+
+El endpoint `/api/admin/provision-claims` necesita las credenciales del Admin SDK para asignar claims:
+
+1. En Firebase Console: **Project Settings → Service Accounts → Generate new private key** y descarga el JSON.
+2. Extrae del JSON:
+   - `project_id` → `FIREBASE_PROJECT_ID`
+   - `client_email` → `FIREBASE_CLIENT_EMAIL`
+   - `private_key` → `FIREBASE_PRIVATE_KEY` (reemplaza los saltos de línea por `\\n`)
+3. Configura esas variables en el entorno donde corre Next.js (Vercel/Firebase Hosting/Server).
+4. Redeploy y prueba nuevamente el login para que el endpoint pueda asignar los claims.
+
 ## 5. Desplegar Firestore Rules
 
 ```bash
