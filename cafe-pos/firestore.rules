@@ -57,8 +57,8 @@ service cloud.firestore {
     // ==================== USUARIOS ====================
     
     match /tenants/{tenantId}/users/{userId} {
-      allow read: if belongsToTenant(tenantId) ||
-        (isOwner(userId) && resource.data.tenantId == tenantId);
+      allow read: if isOwner(userId) ||
+        (belongsToTenant(tenantId) && resource.data.tenantId == tenantId);
       
       // Solo admin puede crear/modificar usuarios
       allow create: if (isAdmin(tenantId) && request.resource.data.tenantId == tenantId) ||
