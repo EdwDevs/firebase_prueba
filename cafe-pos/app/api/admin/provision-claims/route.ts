@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminAuth, adminDb } from '@/lib/firebaseAdmin';
 
+export const runtime = 'nodejs';
+
 const getDefaultTenantId = () =>
   process.env.NEXT_PUBLIC_TENANT_ID ?? process.env.DEFAULT_TENANT_ID ?? '';
 
