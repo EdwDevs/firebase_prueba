@@ -10,6 +10,16 @@ const getDefaultTenantId = () =>
 const getDisplayName = (decoded: { name?: string; email?: string }) =>
   decoded.name ?? decoded.email?.split('@')[0] ?? 'Usuario';
 
+const getMissingAdminEnv = () => {
+  const requiredVars = [
+    'FIREBASE_PROJECT_ID',
+    'FIREBASE_CLIENT_EMAIL',
+    'FIREBASE_PRIVATE_KEY',
+  ];
+
+  return requiredVars.filter((name) => !process.env[name]);
+};
+
 export async function POST(request: Request) {
   const authHeader = request.headers.get('authorization') ?? '';
   const tokenMatch = authHeader.match(/^Bearer (.+)$/);
@@ -19,6 +29,16 @@ export async function POST(request: Request) {
   }
 
   try {
+    const missingEnv = getMissingAdminEnv();
+    if (missingEnv.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Configuración de Firebase Admin incompleta. Faltan: ${missingEnv.join(', ')}.`,
+        },
+        { status: 500 }
+      );
+    }
+
     const decoded = await adminAuth.verifyIdToken(tokenMatch[1]);
     const payload = await request.json().catch(() => ({}));
     const targetUid = (payload.uid as string | undefined) ?? decoded.uid;
@@ -87,7 +107,41 @@ export async function POST(request: Request) {
       role,
     });
   } catch (error) {
-    console.error('Error provisioning claims:', error);
+    const errorCode =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: string }).code)
+        : 'unknown';
+    const errorMessage =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as { message?: string }).message)
+        : 'Error desconocido.';
+
+    console.error('Error provisioning claims:', {
+      code: errorCode,
+      message: errorMessage,
+    });
+
+    if (errorCode === 'auth/insufficient-permission') {
+      return NextResponse.json(
+        { error: 'Permisos insuficientes para asignar claims.' },
+        { status: 403 }
+      );
+    }
+
+    if (errorCode === 'auth/argument-error') {
+      return NextResponse.json(
+        { error: 'Solicitud inválida para asignar claims.' },
+        { status: 400 }
+      );
+    }
+
+    if (errorCode === 'app/invalid-credential' || errorCode === 'app/no-app') {
+      return NextResponse.json(
+        { error: 'Credenciales de Firebase Admin inválidas o faltantes.' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ error: 'No se pudo asignar claims.' }, { status: 500 });
   }
 }
