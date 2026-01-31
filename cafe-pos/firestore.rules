@@ -41,7 +41,7 @@ service cloud.firestore {
     }
     
     function belongsToTenant(tenantId) {
-      return isAuthenticated() && (hasTenantClaim(tenantId) || hasUserDoc(tenantId));
+      return isAuthenticated() && hasTenantClaim(tenantId);
     }
     
     function isOwner(userId) {

@@ -22,9 +22,41 @@ export function useAuth() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          const tokenResult = await firebaseUser.getIdTokenResult();
-          const tenantIdFromClaims = tokenResult.claims.tenantId as string | undefined;
-          const tenantId = tenantIdFromClaims ?? DEFAULT_TENANT_ID;
+          const ensureClaims = async () => {
+            const token = await firebaseUser.getIdToken();
+            const response = await fetch('/api/admin/provision-claims', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                tenantId: DEFAULT_TENANT_ID || undefined,
+              }),
+            });
+
+            if (!response.ok) {
+              const payload = await response.json().catch(() => ({}));
+              throw new Error(payload?.error ?? 'No se pudieron asignar claims.');
+            }
+
+            await firebaseUser.getIdToken(true);
+            return firebaseUser.getIdTokenResult();
+          };
+
+          let tokenResult = await firebaseUser.getIdTokenResult();
+          let tenantId = tokenResult.claims.tenantId as string | undefined;
+          let roleFromClaims = tokenResult.claims.role as User['role'] | undefined;
+
+          if (!tenantId || !roleFromClaims) {
+            try {
+              tokenResult = await ensureClaims();
+              tenantId = tokenResult.claims.tenantId as string | undefined;
+              roleFromClaims = tokenResult.claims.role as User['role'] | undefined;
+            } catch (error) {
+              console.error('Error provisioning claims:', error);
+            }
+          }
 
           const getDisplayName = () =>
             firebaseUser.displayName ||
@@ -39,14 +71,16 @@ export function useAuth() {
             id: firebaseUser.uid,
             email: userData.email ?? firebaseUser.email ?? '',
             displayName: userData.displayName ?? getDisplayName(),
-            role: userData.role ?? 'waiter',
+            role: userData.role ?? roleFromClaims ?? 'waiter',
             isActive: userData.isActive ?? true,
             createdAt: userData.createdAt?.toDate?.() ?? userData.createdAt ?? new Date(),
-            tenantId: userData.tenantId ?? tenantId,
+            tenantId: userData.tenantId ?? tenantId ?? '',
           });
 
           if (!tenantId) {
-            setAuthError('No hay tenant configurado para este usuario.');
+            setAuthError(
+              'No hay tenant configurado para este usuario. Contacta al administrador para asignar claims.'
+            );
             setUser(null);
             return;
           }
