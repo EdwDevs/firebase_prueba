@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // CRM personal público (sin autenticación) — colecciones de finanzas del hogar.
+    match /{collection}/{doc=**} {
+      allow read, write: if collection in ["categories", "transactions", "cards", "credits"];
+    }
+  }
+}
